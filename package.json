@@ -1,0 +1,23 @@
+{
+  "type": "module",
+  "name": "waml",
+  "packageManager": "yarn@3.5.0",
+  "main": "dist/index.js",
+  "scripts": {
+    "watch": "tsc -w",
+    "build": "tsc",
+    "task:build-waml": "nearleyc res/waml.ne -o res/waml.cjs"
+  },
+  "devDependencies": {
+    "@jjoriping/eslint-plugin": "github:JJoriping/eslint-plugin",
+    "@types/node": "^18.15.6",
+    "eslint": "^8.36.0",
+    "eslint-config-prettier": "^8.8.0",
+    "prettier": "^2.8.7",
+    "typescript": "^5.0.2"
+  },
+  "dependencies": {
+    "moo": "^0.5.2",
+    "nearley": "^2.20.1"
+  }
+}

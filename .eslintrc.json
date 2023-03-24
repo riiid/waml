@@ -1,0 +1,23 @@
+{
+  "root": true,
+  "plugins": [
+    "@jjoriping/eslint-plugin"
+  ],
+  "extends": [
+    "plugin:@jjoriping/eslint-plugin/all",
+    "prettier"
+  ],
+  "parserOptions": {
+    "project": "./tsconfig.json"
+  },
+  "rules": {
+    "@jjoriping/iterator-name": "off",
+    "@jjoriping/key-quotation-style": "off",
+    "@jjoriping/multiline-expression-spacing": "off",
+    "@jjoriping/parenthesis-spacing": "off",
+    "@jjoriping/semantic-quotes": "off",
+    "@jjoriping/ternary-spacing": "off",
+    "@jjoriping/type-colon-spacing": "off",
+    "@jjoriping/type-operator-spacing": "off"
+  }
+}
