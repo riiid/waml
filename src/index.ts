@@ -1,10 +1,10 @@
-import { WAML } from "./type";
+import { WAML } from "./type.js";
 import Nearley from "nearley";
 import Grammar from "../res/waml.cjs";
 
 const grammar = Nearley.Grammar.fromCompiled(Grammar);
 
-export * from "./type";
+export * from "./type.js";
 export function parseWAML(text:string):WAML.Document|WAML.ParserError{
   const parser = new Nearley.Parser(grammar);
 
