@@ -28,9 +28,9 @@ function id(x) { return x[0]; }
     medium: {
       match: /!\[.+?\]\(.+?\)/,
       value: chunk => {
-        const [ , title, url ] = chunk.match(/^!\[(.+?)\]\((.+?)\)$/);
+        const [ , title, uri ] = chunk.match(/^!\[(.+?)\]\((.+?)\)$/);
 
-        return { type: "image", title, url };
+        return { title, uri };
       }
     },
     lineBreak: { match: /\r?\n/, lineBreaks: true },
