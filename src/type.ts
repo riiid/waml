@@ -28,7 +28,9 @@ export namespace WAML {
       }
     | null;
   export type Inline =
-    | MooToken<"option" | "shortLingualOption" | "medium">
+    | MooToken<"option">
+    | MooToken<"shortLingualOption">
+    | MooToken<"medium">
     | Math<true>
     | StyledInline
     | ClassedInline
@@ -55,7 +57,7 @@ export namespace WAML {
     | {
         kind: "Directive";
         name: "answer";
-        option: MooToken<"option" | "shortLingualOption">;
+        option: MooToken<"option">|MooToken<"shortLingualOption">;
       }
     | {
         kind: "Directive";
@@ -103,9 +105,13 @@ export namespace WAML {
     };
   };
 }
+
 export function isMooToken<T extends WAML.MooTokenType>(
   value: object,
   type: T
 ): value is WAML.MooToken<T> {
   return value && "type" in value && value.type === type && "line" in value && "col" in value;
+}
+export function hasKind<T extends string>(value:object, kind:T):value is { kind: T }{
+  return value && 'kind' in value && value.kind === kind;
 }

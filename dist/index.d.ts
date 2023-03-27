@@ -1,3 +1,4 @@
-import { WAML } from "./type.js";
 export * from "./type.js";
-export declare function parseWAML(text: string): WAML.Document | WAML.ParserError;
+export * from "./parse-waml.js";
+export * from "./sanitize-waml.js";
+export * from "./find-answer.js";

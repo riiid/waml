@@ -19,7 +19,7 @@ export declare namespace WAML {
         headOption?: MooToken<"option">;
         inlines: Inline[];
     } | null;
-    export type Inline = MooToken<"option" | "shortLingualOption" | "medium"> | Math<true> | StyledInline | ClassedInline | string;
+    export type Inline = MooToken<"option"> | MooToken<"shortLingualOption"> | MooToken<"medium"> | Math<true> | StyledInline | ClassedInline | string;
     type StyledInline = {
         kind: "StyledInline";
         style: string;
@@ -41,7 +41,7 @@ export declare namespace WAML {
     export type Directive = {
         kind: "Directive";
         name: "answer";
-        option: MooToken<"option" | "shortLingualOption">;
+        option: MooToken<"option"> | MooToken<"shortLingualOption">;
     } | {
         kind: "Directive";
         name: "passage";
@@ -86,3 +86,6 @@ export declare namespace WAML {
     export {};
 }
 export declare function isMooToken<T extends WAML.MooTokenType>(value: object, type: T): value is WAML.MooToken<T>;
+export declare function hasKind<T extends string>(value: object, kind: T): value is {
+    kind: T;
+};

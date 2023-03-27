@@ -9,3 +9,6 @@ export var WAML;
 export function isMooToken(value, type) {
     return value && "type" in value && value.type === type && "line" in value && "col" in value;
 }
+export function hasKind(value, kind) {
+    return value && 'kind' in value && value.kind === kind;
+}

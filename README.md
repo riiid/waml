@@ -31,6 +31,12 @@ Then the output would be:
 We call this AST - abstract syntax tree.
 You can make a custom WAML viewer from the AST.
 
+## API
+- **`parseWAML`** converts a string to a WAML document.
+  You should check syntax errors like `if('error' in document){ ... }`.
+- **`sanitizeWAML`** extracts plain text from a WAML document.
+- **`findAnswer`** extracts the answer of a WAML document.
+
 ## Grammar
 ### Question
 ```
