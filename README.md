@@ -4,7 +4,7 @@
 (or **W**ise**A**lpha **M**arkup **L**anguage)
 
 - Why well-defined? - It's designed for people who don't know programming at all to edit the code itself without any extra editors.
-- Why academic?     - It's specialized in writing any problems to be solved by students in the education field.
+- Why academic? - It's specialized in writing any problems to be solved by students in the education field.
 
 ## Getting Started
 
@@ -16,6 +16,7 @@
    ```
 
 Then the output would be:
+
 ```json
 [
   {
@@ -23,97 +24,138 @@ Then the output would be:
     "prefixes": [],
     "component": {
       "kind": "LineComponent",
-      "inlines": [ "H", "e", "l", "l", "o", ",", " ", "W", "o", "r", "l", "d", "!" ]
+      "inlines": [
+        "H",
+        "e",
+        "l",
+        "l",
+        "o",
+        ",",
+        " ",
+        "W",
+        "o",
+        "r",
+        "l",
+        "d",
+        "!"
+      ]
     }
   }
 ]
 ```
+
 We call this AST - abstract syntax tree.
 You can make a custom WAML viewer from the AST.
 
 ## API
+
 - **`parseWAML`** converts a string to a WAML document.
   You should check syntax errors like `if('error' in document){ ... }`.
 - **`sanitizeWAML`** extracts plain text from a WAML document.
 - **`findAnswer`** extracts the answer of a WAML document.
+- **`findReferences`** extracts external resources (e.g., image, passage) of a WAML document.
+- **`isMooToken`** checks whether the object is a primitive Moo token.
+- **`hasKind`** checks whether the object is a component token.
 
 ## Grammar
+
 ### Question
+
 ```
 # What is the least common multiple of 6 and 10?
 ```
+
 > ![question](https://user-images.githubusercontent.com/101630758/227753475-3078bbaa-7648-4b0c-b0ab-b4ed8a6c3a4e.png)
 
 ### Option
+
 ```
 {1} 12
 {2} 20
 {3} 30
 {4} 60
 ```
+
 > ![option](https://user-images.githubusercontent.com/101630758/227753482-8f0df222-a7ec-4014-b02a-92d6a4cfbb36.png)
 
 ### Answer
+
 ```
 @answer {3}
 ```
+
 > ![option-and-answer](https://user-images.githubusercontent.com/101630758/227753541-0add3e8b-b4e8-4178-9e59-69f39f47e18e.png)
 
 ### Subjective
+
 ```
 # What is the greatest common factor of 6 and 10?
 {{  }}
 @answer {{2}}
 ```
+
 > ![subjective](https://user-images.githubusercontent.com/101630758/227754663-062ac08f-1921-480d-9ef5-6c594ae9a999.png)
 
 ### Text Style
+
 ```
 *Italic*
 **Bold**
 ***Bold and italic***
 __Underline__
 ```
+
 > ![text-style](https://user-images.githubusercontent.com/101630758/227753611-4b7516a7-1f6e-4602-b391-deefd9128ba0.png)
 
 You can escape those letters with `\`.
+
 ```
 if \__name\__ == '\__main\__':
 ```
+
 > ![escape](https://user-images.githubusercontent.com/101630758/227753708-31525592-7c62-449c-baa1-56c493614e2e.png)
 
 ### Quotation
+
 ```
 > Once upon a time there was a princess...
 ```
+
 > ![quotation](https://user-images.githubusercontent.com/101630758/227753805-394bf914-c45c-4b7f-8b86-ac354e5668c2.png)
 
 ### Footnote
+
 ```
 *) ATP: adenosine triphosphate
 ```
+
 > ![footnote](https://user-images.githubusercontent.com/101630758/227753876-c3fb953f-5140-46ed-9b8d-3d842612f90d.png)
 
-### Medium* (image, sound, ...)
+### Medium\* (image, sound, ...)
+
 ```
 ![dog](https://example.com/images/dog.png)
 ```
 
-### Passage Import*
+### Passage Import\*
+
 ```
 @passage https://example.com/passages/123.waml
 ```
 
 ### Math
+
 ```
 Solution of a quadratic equation $ax^2 + bx + c = 0$:
 $$
 x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}
 $$
 ```
+
 ![math](https://user-images.githubusercontent.com/101630758/227754315-0fcc1d83-5614-4230-a1c5-d2044f79e597.png)
 
 ### Custom CSS
+
 ```
 Hello, [[highlight: World]]!
 [[highlight]]
@@ -125,17 +167,21 @@ Hello, [[highlight: World]]!
 }
 </style>
 ```
+
 ![custom-css](https://user-images.githubusercontent.com/101630758/227754444-28ec10d6-23a4-4b40-a941-6443924da0a9.png)
 
 ### Explanation
+
 ```
 <explanation>
 Use prime factorization to find the GCF: 6 goes 2×3 and 10 goes 2×5.
 </explanation>
 ```
+
 ![explanation](https://user-images.githubusercontent.com/101630758/227754797-971b2a89-9c89-4d19-9c12-6a508c7e3d24.png)
 
 ## Complex Example
+
 ```
 # 세 상수 $a$, $b$, $c$에 대하여 함수 $f(x) = ae^{2x} + be^{x} + c$가
 # 다음 조건을 만족시킨다.
@@ -183,8 +229,10 @@ Note that the two phrases below are basically similar in meaning and structure.
 }
 </style>
 ```
+
 > ![sample](https://user-images.githubusercontent.com/101630758/227754921-acf96248-dfb5-4451-be27-f0b87b0d7da4.png)
 
 ## Caveat
+
 - The output images above are from an in-company viewer. Depending on viewer implementation, the output may be different.
 - URI in media and passage imports should be treated by viewers. WAML just treats it as a string.

@@ -3,7 +3,7 @@
   "name": "waml",
   "packageManager": "yarn@3.5.0",
   "main": "dist/index.js",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "author": "JJoriping <juyeong.jeong@riiid.co>",
   "scripts": {
     "watch": "tsc -w",

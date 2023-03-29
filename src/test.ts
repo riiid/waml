@@ -1,5 +1,6 @@
 import * as assert from "assert";
 import { findAnswer } from "./find-answer.js";
+import { findReferences } from "./find-references.js";
 import { parseWAML } from "./parse-waml.js";
 import { sanitizeWAML } from "./sanitize-waml.js";
 
@@ -30,3 +31,4 @@ assert.equal(sanitizeWAML(document), `위 밑줄 친 단어의 뜻으로 적절�
 해당 글에서 head는 '~로 향하다'라는 의미의 동사이다.`);
 
 assert.equal(findAnswer(document), "4");
+assert.equal((findReferences(document)[0] as any).name, "passage");
