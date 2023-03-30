@@ -102,7 +102,7 @@ Line           -> (%prefix %spaces):* LineComponent:?                   {% ([ pr
                                                                           }
                                                                           return { kind: "Line", prefixes, component };
                                                                         }%}
-                  | %prefix (%spaces %prefix):*                         {% ([ first, rest ]) => ({ kind: "Line", prefixes: [ first, ...rest.map(v => v[1]) ] }) %}
+                  | %prefix (%spaces %prefix):*                         {% ([ first, rest ]) => ({ kind: "Line", prefixes: [ first, ...rest.map(v => v[1]) ], component: null }) %}
                   | %lineComment                                        {% id %}
                   | XMLElement                                          {% id %}
 LineComponent  -> BlockMath                                             {% id %}

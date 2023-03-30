@@ -117,7 +117,7 @@ var grammar = {
     {"name": "Line$ebnf$3", "symbols": []},
     {"name": "Line$ebnf$3$subexpression$1", "symbols": [(lexer.has("spaces") ? {type: "spaces"} : spaces), (lexer.has("prefix") ? {type: "prefix"} : prefix)]},
     {"name": "Line$ebnf$3", "symbols": ["Line$ebnf$3", "Line$ebnf$3$subexpression$1"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "Line", "symbols": [(lexer.has("prefix") ? {type: "prefix"} : prefix), "Line$ebnf$3"], "postprocess": ([ first, rest ]) => ({ kind: "Line", prefixes: [ first, ...rest.map(v => v[1]) ] })},
+    {"name": "Line", "symbols": [(lexer.has("prefix") ? {type: "prefix"} : prefix), "Line$ebnf$3"], "postprocess": ([ first, rest ]) => ({ kind: "Line", prefixes: [ first, ...rest.map(v => v[1]) ], component: null })},
     {"name": "Line", "symbols": [(lexer.has("lineComment") ? {type: "lineComment"} : lineComment)], "postprocess": id},
     {"name": "Line", "symbols": ["XMLElement"], "postprocess": id},
     {"name": "LineComponent", "symbols": ["BlockMath"], "postprocess": id},
