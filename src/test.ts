@@ -32,3 +32,5 @@ assert.equal(sanitizeWAML(document), `위 밑줄 친 단어의 뜻으로 적절�
 
 assert.equal(findAnswer(document), "4");
 assert.equal((findReferences(document)[0] as any).name, "passage");
+
+console.log(parseWAML(">"));

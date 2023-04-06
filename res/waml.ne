@@ -34,12 +34,14 @@
     identifiable: /[\w가-힣-]/,
     character: /./
   };
+  const main = {
+    xStyleOpen: { match: /<style>\s*/, push: "xStyle", value: () => "style" },
+    xExplanationOpen: { match: /<explanation>\s*/, push: "xExplanation", value: () => "explanation" },
+    xTableOpen: { match: /<table>\s*/, push: "xTable", value: () => "table" },
+    ...withoutXML
+  };
   const lexer = moo.states({
-    main: {
-      xStyleOpen: { match: /<style>\s*/, push: "xStyle", value: () => "style" },
-      xExplanationOpen: { match: /<explanation>\s*/, push: "xExplanation", value: () => "explanation" },
-      ...withoutXML
-    },
+    main,
     xStyle: {
       xStyleClose: { match: /\s*<\/style>/, pop: 1 },
       any: { match: /[\s\S]/, lineBreaks: true }
@@ -47,6 +49,27 @@
     xExplanation: {
       xExplanationClose: { match: /\s*<\/explanation>/, pop: 1 },
       ...withoutXML
+    },
+    xTable: {
+      xTableClose: { match: /\s*<\/table>/, pop: 1 },
+      cellOpen: { match: /\[:?/, push: "xTableCell", value: chunk => ({ hasAlignmentIndicator: chunk.endsWith(":") }) },
+      cellPrefix: "#",
+      rowSeparator: /={3,}/,
+      lineBreak: { match: /\r?\n/, lineBreaks: true },
+      spaces: /[ \t]+/
+    },
+    xTableCell: {
+      cellClose: { match: /:?]-*(?:\r?\n\|)*/, lineBreaks: true, pop: 1, value: chunk => {
+        const colspan = chunk.split('-').length;
+        const rowspan = chunk.split(/\r?\n/).length;
+
+        return {
+          hasAlignmentIndicator: chunk.startsWith(":"),
+          colspan: colspan > 1 ? colspan : undefined,
+          rowspan: rowspan > 1 ? rowspan : undefined
+        };
+      }},
+      ...main
     },
     blockMath: {
       blockMathClose: { match: "$$", pop: 1 },
@@ -90,9 +113,8 @@
 %}
 @lexer lexer
 
-Array[X, D]    -> null                                                  {% () => [] %} 
-                  | $X ($D $X):*                                        {% ([ first, rest ]) => [ first[0], ...rest.map(v => v[1][0]) ] %}
-Element[O, B, C] -> $O $B $C                                            {% ([ open, body ]) => ({ tag: open[0].value, body: body[0] }) %}
+Array[X, D]    -> $X ($D $X):*                                          {% ([ first, rest ]) => [ first[0], ...rest.map(v => v[1][0]) ] %}
+Element[O, B, C] -> %spaces:* $O $B $C                                  {% ([ , open, body ]) => ({ tag: open[0].value, body: body[0] }) %}
 
 Main           -> Array[Line, %lineBreak]                               {% id %}
 Line           -> (%prefix %spaces):* LineComponent:?                   {% ([ prefixes, component ]) => {
@@ -139,5 +161,31 @@ ClassedInline  -> %classOpen %identifiable:+ ":" Inline:+ %classClose   {% ([ , 
 
 XMLElement     -> Element[%xStyleOpen, %any:*, %xStyleClose]            {% ([{ tag, body }]) => ({ kind: "XMLElement", tag, content: mergeValue(body) }) %}
                   | Element[%xExplanationOpen, Main, %xExplanationClose] {% ([{ tag, body }]) => ({ kind: "XMLElement", tag, content: body }) %} 
+                  | Element[%xTableOpen, Table, %xTableClose]           {% ([{ tag, body }]) => ({ kind: "XMLElement", tag, content: body }) %} 
 BlockMath      -> %blockMathOpen %any:+ %blockMathClose                 {% ([ , content ]) => ({ kind: "Math", inline: false, content: mergeValue(content) }) %}
 InlineMath     -> %inlineMathOpen %any:+ %inlineMathClose               {% ([ , content ]) => ({ kind: "Math", inline: true, content: mergeValue(content) }) %}
+
+Table          -> Array[TableItem, %lineBreak]                          {% id %}
+TableItem      -> Cell                                                  {% id %}
+                  | %rowSeparator                                       {% id %}
+Cell           -> %spaces:* %cellPrefix:? %cellOpen Main %cellClose     {% ([ , prefix, open, body, close ]) => {
+                                                                          let alignment;
+                                                                          
+                                                                          if(open.value.hasAlignmentIndicator){
+                                                                            if(close.value.hasAlignmentIndicator){
+                                                                              alignment = "center";
+                                                                            }else{
+                                                                              alignment = "left";
+                                                                            }
+                                                                          }else if(close.value.hasAlignmentIndicator){
+                                                                            alignment = "right";
+                                                                          }
+                                                                          return {
+                                                                            kind: "Cell",
+                                                                            prefix: prefix?.value,
+                                                                            alignment,
+                                                                            colspan: close.value.colspan,
+                                                                            rowspan: close.value.rowspan,
+                                                                            body
+                                                                          };
+                                                                        }%}

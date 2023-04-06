@@ -38,12 +38,14 @@ function id(x) { return x[0]; }
     identifiable: /[\w가-힣-]/,
     character: /./
   };
+  const main = {
+    xStyleOpen: { match: /<style>\s*/, push: "xStyle", value: () => "style" },
+    xExplanationOpen: { match: /<explanation>\s*/, push: "xExplanation", value: () => "explanation" },
+    xTableOpen: { match: /<table>\s*/, push: "xTable", value: () => "table" },
+    ...withoutXML
+  };
   const lexer = moo.states({
-    main: {
-      xStyleOpen: { match: /<style>\s*/, push: "xStyle", value: () => "style" },
-      xExplanationOpen: { match: /<explanation>\s*/, push: "xExplanation", value: () => "explanation" },
-      ...withoutXML
-    },
+    main,
     xStyle: {
       xStyleClose: { match: /\s*<\/style>/, pop: 1 },
       any: { match: /[\s\S]/, lineBreaks: true }
@@ -51,6 +53,27 @@ function id(x) { return x[0]; }
     xExplanation: {
       xExplanationClose: { match: /\s*<\/explanation>/, pop: 1 },
       ...withoutXML
+    },
+    xTable: {
+      xTableClose: { match: /\s*<\/table>/, pop: 1 },
+      cellOpen: { match: /\[:?/, push: "xTableCell", value: chunk => ({ hasAlignmentIndicator: chunk.endsWith(":") }) },
+      cellPrefix: "#",
+      rowSeparator: /={3,}/,
+      lineBreak: { match: /\r?\n/, lineBreaks: true },
+      spaces: /[ \t]+/
+    },
+    xTableCell: {
+      cellClose: { match: /:?]-*(?:\r?\n\|)*/, lineBreaks: true, pop: 1, value: chunk => {
+        const colspan = chunk.split('-').length;
+        const rowspan = chunk.split(/\r?\n/).length;
+
+        return {
+          hasAlignmentIndicator: chunk.startsWith(":"),
+          colspan: colspan > 1 ? colspan : undefined,
+          rowspan: rowspan > 1 ? rowspan : undefined
+        };
+      }},
+      ...main
     },
     blockMath: {
       blockMathClose: { match: "$$", pop: 1 },
@@ -96,7 +119,6 @@ var grammar = {
     ParserRules: [
     {"name": "Main$macrocall$2", "symbols": ["Line"]},
     {"name": "Main$macrocall$3", "symbols": [(lexer.has("lineBreak") ? {type: "lineBreak"} : lineBreak)]},
-    {"name": "Main$macrocall$1", "symbols": [], "postprocess": () => []},
     {"name": "Main$macrocall$1$ebnf$1", "symbols": []},
     {"name": "Main$macrocall$1$ebnf$1$subexpression$1", "symbols": ["Main$macrocall$3", "Main$macrocall$2"]},
     {"name": "Main$macrocall$1$ebnf$1", "symbols": ["Main$macrocall$1$ebnf$1", "Main$macrocall$1$ebnf$1$subexpression$1"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
@@ -176,19 +198,64 @@ var grammar = {
     {"name": "XMLElement$macrocall$3$ebnf$1", "symbols": ["XMLElement$macrocall$3$ebnf$1", (lexer.has("any") ? {type: "any"} : any)], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "XMLElement$macrocall$3", "symbols": ["XMLElement$macrocall$3$ebnf$1"]},
     {"name": "XMLElement$macrocall$4", "symbols": [(lexer.has("xStyleClose") ? {type: "xStyleClose"} : xStyleClose)]},
-    {"name": "XMLElement$macrocall$1", "symbols": ["XMLElement$macrocall$2", "XMLElement$macrocall$3", "XMLElement$macrocall$4"], "postprocess": ([ open, body ]) => ({ tag: open[0].value, body: body[0] })},
+    {"name": "XMLElement$macrocall$1$ebnf$1", "symbols": []},
+    {"name": "XMLElement$macrocall$1$ebnf$1", "symbols": ["XMLElement$macrocall$1$ebnf$1", (lexer.has("spaces") ? {type: "spaces"} : spaces)], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "XMLElement$macrocall$1", "symbols": ["XMLElement$macrocall$1$ebnf$1", "XMLElement$macrocall$2", "XMLElement$macrocall$3", "XMLElement$macrocall$4"], "postprocess": ([ , open, body ]) => ({ tag: open[0].value, body: body[0] })},
     {"name": "XMLElement", "symbols": ["XMLElement$macrocall$1"], "postprocess": ([{ tag, body }]) => ({ kind: "XMLElement", tag, content: mergeValue(body) })},
     {"name": "XMLElement$macrocall$6", "symbols": [(lexer.has("xExplanationOpen") ? {type: "xExplanationOpen"} : xExplanationOpen)]},
     {"name": "XMLElement$macrocall$7", "symbols": ["Main"]},
     {"name": "XMLElement$macrocall$8", "symbols": [(lexer.has("xExplanationClose") ? {type: "xExplanationClose"} : xExplanationClose)]},
-    {"name": "XMLElement$macrocall$5", "symbols": ["XMLElement$macrocall$6", "XMLElement$macrocall$7", "XMLElement$macrocall$8"], "postprocess": ([ open, body ]) => ({ tag: open[0].value, body: body[0] })},
+    {"name": "XMLElement$macrocall$5$ebnf$1", "symbols": []},
+    {"name": "XMLElement$macrocall$5$ebnf$1", "symbols": ["XMLElement$macrocall$5$ebnf$1", (lexer.has("spaces") ? {type: "spaces"} : spaces)], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "XMLElement$macrocall$5", "symbols": ["XMLElement$macrocall$5$ebnf$1", "XMLElement$macrocall$6", "XMLElement$macrocall$7", "XMLElement$macrocall$8"], "postprocess": ([ , open, body ]) => ({ tag: open[0].value, body: body[0] })},
     {"name": "XMLElement", "symbols": ["XMLElement$macrocall$5"], "postprocess": ([{ tag, body }]) => ({ kind: "XMLElement", tag, content: body })},
+    {"name": "XMLElement$macrocall$10", "symbols": [(lexer.has("xTableOpen") ? {type: "xTableOpen"} : xTableOpen)]},
+    {"name": "XMLElement$macrocall$11", "symbols": ["Table"]},
+    {"name": "XMLElement$macrocall$12", "symbols": [(lexer.has("xTableClose") ? {type: "xTableClose"} : xTableClose)]},
+    {"name": "XMLElement$macrocall$9$ebnf$1", "symbols": []},
+    {"name": "XMLElement$macrocall$9$ebnf$1", "symbols": ["XMLElement$macrocall$9$ebnf$1", (lexer.has("spaces") ? {type: "spaces"} : spaces)], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "XMLElement$macrocall$9", "symbols": ["XMLElement$macrocall$9$ebnf$1", "XMLElement$macrocall$10", "XMLElement$macrocall$11", "XMLElement$macrocall$12"], "postprocess": ([ , open, body ]) => ({ tag: open[0].value, body: body[0] })},
+    {"name": "XMLElement", "symbols": ["XMLElement$macrocall$9"], "postprocess": ([{ tag, body }]) => ({ kind: "XMLElement", tag, content: body })},
     {"name": "BlockMath$ebnf$1", "symbols": [(lexer.has("any") ? {type: "any"} : any)]},
     {"name": "BlockMath$ebnf$1", "symbols": ["BlockMath$ebnf$1", (lexer.has("any") ? {type: "any"} : any)], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "BlockMath", "symbols": [(lexer.has("blockMathOpen") ? {type: "blockMathOpen"} : blockMathOpen), "BlockMath$ebnf$1", (lexer.has("blockMathClose") ? {type: "blockMathClose"} : blockMathClose)], "postprocess": ([ , content ]) => ({ kind: "Math", inline: false, content: mergeValue(content) })},
     {"name": "InlineMath$ebnf$1", "symbols": [(lexer.has("any") ? {type: "any"} : any)]},
     {"name": "InlineMath$ebnf$1", "symbols": ["InlineMath$ebnf$1", (lexer.has("any") ? {type: "any"} : any)], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "InlineMath", "symbols": [(lexer.has("inlineMathOpen") ? {type: "inlineMathOpen"} : inlineMathOpen), "InlineMath$ebnf$1", (lexer.has("inlineMathClose") ? {type: "inlineMathClose"} : inlineMathClose)], "postprocess": ([ , content ]) => ({ kind: "Math", inline: true, content: mergeValue(content) })}
+    {"name": "InlineMath", "symbols": [(lexer.has("inlineMathOpen") ? {type: "inlineMathOpen"} : inlineMathOpen), "InlineMath$ebnf$1", (lexer.has("inlineMathClose") ? {type: "inlineMathClose"} : inlineMathClose)], "postprocess": ([ , content ]) => ({ kind: "Math", inline: true, content: mergeValue(content) })},
+    {"name": "Table$macrocall$2", "symbols": ["TableItem"]},
+    {"name": "Table$macrocall$3", "symbols": [(lexer.has("lineBreak") ? {type: "lineBreak"} : lineBreak)]},
+    {"name": "Table$macrocall$1$ebnf$1", "symbols": []},
+    {"name": "Table$macrocall$1$ebnf$1$subexpression$1", "symbols": ["Table$macrocall$3", "Table$macrocall$2"]},
+    {"name": "Table$macrocall$1$ebnf$1", "symbols": ["Table$macrocall$1$ebnf$1", "Table$macrocall$1$ebnf$1$subexpression$1"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "Table$macrocall$1", "symbols": ["Table$macrocall$2", "Table$macrocall$1$ebnf$1"], "postprocess": ([ first, rest ]) => [ first[0], ...rest.map(v => v[1][0]) ]},
+    {"name": "Table", "symbols": ["Table$macrocall$1"], "postprocess": id},
+    {"name": "TableItem", "symbols": ["Cell"], "postprocess": id},
+    {"name": "TableItem", "symbols": [(lexer.has("rowSeparator") ? {type: "rowSeparator"} : rowSeparator)], "postprocess": id},
+    {"name": "Cell$ebnf$1", "symbols": []},
+    {"name": "Cell$ebnf$1", "symbols": ["Cell$ebnf$1", (lexer.has("spaces") ? {type: "spaces"} : spaces)], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "Cell$ebnf$2", "symbols": [(lexer.has("cellPrefix") ? {type: "cellPrefix"} : cellPrefix)], "postprocess": id},
+    {"name": "Cell$ebnf$2", "symbols": [], "postprocess": function(d) {return null;}},
+    {"name": "Cell", "symbols": ["Cell$ebnf$1", "Cell$ebnf$2", (lexer.has("cellOpen") ? {type: "cellOpen"} : cellOpen), "Main", (lexer.has("cellClose") ? {type: "cellClose"} : cellClose)], "postprocess":  ([ , prefix, open, body, close ]) => {
+          let alignment;
+          
+          if(open.value.hasAlignmentIndicator){
+            if(close.value.hasAlignmentIndicator){
+              alignment = "center";
+            }else{
+              alignment = "left";
+            }
+          }else if(close.value.hasAlignmentIndicator){
+            alignment = "right";
+          }
+          return {
+            kind: "Cell",
+            prefix: prefix?.value,
+            alignment,
+            colspan: close.value.colspan,
+            rowspan: close.value.rowspan,
+            body
+          };
+        }}
 ]
   , ParserStart: "Main"
 }
