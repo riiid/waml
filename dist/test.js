@@ -30,3 +30,4 @@ assert.equal(sanitizeWAML(document), `위 밑줄 친 단어의 뜻으로 적절�
 해당 글에서 head는 '~로 향하다'라는 의미의 동사이다.`);
 assert.equal(findAnswer(document), "4");
 assert.equal(findReferences(document)[0].name, "passage");
+console.log(parseWAML(">"));

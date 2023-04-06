@@ -18,7 +18,7 @@ export declare namespace WAML {
         kind: "LineComponent";
         headOption?: MooToken<"option">;
         inlines: Inline[];
-    } | null;
+    } | LineXMLElement | null;
     export type Inline = MooToken<"option"> | MooToken<"shortLingualOption"> | MooToken<"medium"> | Math<true> | StyledInline | ClassedInline | string;
     type StyledInline = {
         kind: "StyledInline";
@@ -61,6 +61,19 @@ export declare namespace WAML {
         tag: "explanation";
         content: Document;
     };
+    export type LineXMLElement = {
+        kind: "XMLElement";
+        tag: "table";
+        content: Array<TableCell | MooToken<'rowSeparator'>>;
+    };
+    export type TableCell = {
+        kind: "Cell";
+        prefix?: string;
+        rowspan?: number;
+        colspan?: number;
+        alignment?: "left" | "center" | "right";
+        body: Document;
+    };
     export type MooTokenType = keyof MooTokenValueTable;
     export type MooToken<T extends MooTokenType> = {
         type: T;
@@ -82,6 +95,7 @@ export declare namespace WAML {
             title: string;
             url: string;
         };
+        rowSeparator: "===";
     };
     export {};
 }

@@ -26,6 +26,7 @@ export namespace WAML {
         headOption?: MooToken<"option">;
         inlines: Inline[];
       }
+    | LineXMLElement
     | null;
   export type Inline =
     | MooToken<"option">
@@ -79,7 +80,21 @@ export namespace WAML {
         kind: "XMLElement";
         tag: "explanation";
         content: Document;
-      };
+      }
+  ;
+  export type LineXMLElement = {
+    kind: "XMLElement";
+    tag: "table";
+    content: Array<TableCell|MooToken<'rowSeparator'>>;
+  };
+  export type TableCell = {
+    kind: "Cell";
+    prefix?: string;
+    rowspan?: number;
+    colspan?: number;
+    alignment?: "left"|"center"|"right";
+    body: Document;
+  }
 
   // eslint-disable-next-line @jjoriping/no-type-name-affix
   export type MooTokenType = keyof MooTokenValueTable;
@@ -103,6 +118,7 @@ export namespace WAML {
       title: string;
       url: string;
     };
+    rowSeparator: "===";
   };
 }
 

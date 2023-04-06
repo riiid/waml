@@ -40,6 +40,13 @@
     xTableOpen: { match: /<table>\s*/, push: "xTable", value: () => "table" },
     ...withoutXML
   };
+  const getCellOpenTokenValue = inline => chunk => {
+    return {
+      inline,
+      prefix: chunk.includes("#") ? "#" : undefined,
+      hasAlignmentIndicator: chunk.endsWith(":")
+    };
+  };
   const lexer = moo.states({
     main,
     xStyle: {
@@ -48,17 +55,19 @@
     },
     xExplanation: {
       xExplanationClose: { match: /\s*<\/explanation>/, pop: 1 },
+      xTableOpen: main.xTableOpen,
       ...withoutXML
     },
     xTable: {
       xTableClose: { match: /\s*<\/table>/, pop: 1 },
-      cellOpen: { match: /\[:?/, push: "xTableCell", value: chunk => ({ hasAlignmentIndicator: chunk.endsWith(":") }) },
-      cellPrefix: "#",
+      cellOpen: { match: /^\s*#?\[:?/, push: "xTableCell", value: getCellOpenTokenValue(false) },
+      inlineCellOpen: { match: /#?\[:?/, push: "xTableCell", value: getCellOpenTokenValue(true) },
       rowSeparator: /={3,}/,
       lineBreak: { match: /\r?\n/, lineBreaks: true },
       spaces: /[ \t]+/
     },
     xTableCell: {
+      classClose: main.classClose,
       cellClose: { match: /:?]-*(?:\r?\n\|)*/, lineBreaks: true, pop: 1, value: chunk => {
         const colspan = chunk.split('-').length;
         const rowspan = chunk.split(/\r?\n/).length;
@@ -69,7 +78,7 @@
           rowspan: rowspan > 1 ? rowspan : undefined
         };
       }},
-      ...main
+      ...omit(main, 'classClose')
     },
     blockMath: {
       blockMathClose: { match: "$$", pop: 1 },
@@ -110,6 +119,12 @@
     
     return content.split('\n').map(v => v.replace(pattern, "")).join('\n');
   }
+  function omit(target, ...keys){
+    const R = { ...target };
+
+    for(const k of keys) delete R[k];
+    return R;
+  }
 %}
 @lexer lexer
 
@@ -139,6 +154,7 @@ LineComponent  -> BlockMath                                             {% id %}
                                                                           }
                                                                           return { kind: "LineComponent", inlines };
                                                                         }%}
+                  | LineXMLElement                                      {% id %}
 Directive      -> %dAnswer %spaces (%option | %shortLingualOption)      {% ([ ,, [ option ] ]) => ({ kind: "Directive", name: "answer", option }) %}
                   | %dPassage %spaces Text:+                            {% ([ ,, path ]) => ({ kind: "Directive", name: "passage", path: path.join('') }) %}
 Inline         -> %option                                               {% id %}
@@ -161,16 +177,21 @@ ClassedInline  -> %classOpen %identifiable:+ ":" Inline:+ %classClose   {% ([ , 
 
 XMLElement     -> Element[%xStyleOpen, %any:*, %xStyleClose]            {% ([{ tag, body }]) => ({ kind: "XMLElement", tag, content: mergeValue(body) }) %}
                   | Element[%xExplanationOpen, Main, %xExplanationClose] {% ([{ tag, body }]) => ({ kind: "XMLElement", tag, content: body }) %} 
-                  | Element[%xTableOpen, Table, %xTableClose]           {% ([{ tag, body }]) => ({ kind: "XMLElement", tag, content: body }) %} 
+LineXMLElement -> Element[%xTableOpen, Table, %xTableClose]             {% ([{ tag, body }]) => ({ kind: "XMLElement", tag, content: body }) %} 
 BlockMath      -> %blockMathOpen %any:+ %blockMathClose                 {% ([ , content ]) => ({ kind: "Math", inline: false, content: mergeValue(content) }) %}
 InlineMath     -> %inlineMathOpen %any:+ %inlineMathClose               {% ([ , content ]) => ({ kind: "Math", inline: true, content: mergeValue(content) }) %}
 
-Table          -> Array[TableItem, %lineBreak]                          {% id %}
+Table          -> TableItem:+                                           {% ([ list ]) => list.filter(v => v) %}
 TableItem      -> Cell                                                  {% id %}
                   | %rowSeparator                                       {% id %}
-Cell           -> %spaces:* %cellPrefix:? %cellOpen Main %cellClose     {% ([ , prefix, open, body, close ]) => {
+                  | %lineBreak                                          {% () => null %}
+                  | %spaces                                             {% () => null %}
+Cell           -> (%cellOpen | %inlineCellOpen) Main %cellClose         {% ([ [ open ], body, close ], _, reject) => {
                                                                           let alignment;
                                                                           
+                                                                          if(open.value.inline && close.value.rowspan){
+                                                                            return reject;
+                                                                          }
                                                                           if(open.value.hasAlignmentIndicator){
                                                                             if(close.value.hasAlignmentIndicator){
                                                                               alignment = "center";
@@ -182,7 +203,7 @@ Cell           -> %spaces:* %cellPrefix:? %cellOpen Main %cellClose     {% ([ , 
                                                                           }
                                                                           return {
                                                                             kind: "Cell",
-                                                                            prefix: prefix?.value,
+                                                                            prefix: open.value.prefix,
                                                                             alignment,
                                                                             colspan: close.value.colspan,
                                                                             rowspan: close.value.rowspan,
