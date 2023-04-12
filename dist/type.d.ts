@@ -61,9 +61,15 @@ export declare namespace WAML {
         tag: "explanation";
         content: Document;
     };
+    type XMLAttribute = {
+        kind: "XMLAttribute";
+        key: string;
+        value: string;
+    };
     export type LineXMLElement = {
         kind: "XMLElement";
         tag: "table";
+        attributes: XMLAttribute[];
         content: Array<TableCell | MooToken<'rowSeparator'>>;
     };
     export type TableCell = {

@@ -37,7 +37,7 @@
   const main = {
     xStyleOpen: { match: /<style>\s*/, push: "xStyle", value: () => "style" },
     xExplanationOpen: { match: /<explanation>\s*/, push: "xExplanation", value: () => "explanation" },
-    xTableOpen: { match: /<table>\s*/, push: "xTable", value: () => "table" },
+    xTableOpen: { match: /<table/, push: "xTableOpening", value: () => "table" },
     ...withoutXML
   };
   const getCellOpenTokenValue = inline => chunk => {
@@ -57,6 +57,12 @@
       xExplanationClose: { match: /\s*<\/explanation>/, pop: 1 },
       xTableOpen: main.xTableOpen,
       ...withoutXML
+    },
+    xTableOpening: {
+      tagClose: { match: />/, next: "xTable" },
+      spaces: withoutXML.spaces,
+      identifiable: withoutXML.identifiable,
+      character: withoutXML.character
     },
     xTable: {
       xTableClose: { match: /\s*<\/table>/, pop: 1 },
@@ -129,7 +135,12 @@
 @lexer lexer
 
 Array[X, D]    -> $X ($D $X):*                                          {% ([ first, rest ]) => [ first[0], ...rest.map(v => v[1][0]) ] %}
-Element[O, B, C] -> %spaces:* $O $B $C                                  {% ([ , open, body ]) => ({ tag: open[0].value, body: body[0] }) %}
+VoidElement[O, B, C] -> %spaces:? $O $B $C                              {% ([ , open, body ]) => ({ tag: open[0].value, body: body[0] }) %}
+Element[O, B, C] -> %spaces:* $O XMLAttribute:* %spaces:? %tagClose $B $C {% ([ , open, attributes,,, body ]) => ({
+                                                                          tag: open[0].value,
+                                                                          attributes,
+                                                                          body: body[0]
+                                                                        })%}
 
 Main           -> Array[Line, %lineBreak]                               {% id %}
 Line           -> (%prefix %spaces):* LineComponent:?                   {% ([ prefixes, component ]) => {
@@ -175,9 +186,10 @@ StyledInline   -> %sUnderlineOpen Inline:* %sUnderlineClose             {% ([ , 
 ClassedBlock   -> %classOpen %identifiable:+ %classClose                {% ([ , name ]) => ({ kind: "ClassedBlock", name: mergeValue(name) }) %}
 ClassedInline  -> %classOpen %identifiable:+ ":" Inline:+ %classClose   {% ([ , name,, inlines ]) => ({ kind: "ClassedInline", name: mergeValue(name), inlines: trimArray(inlines) }) %}
 
-XMLElement     -> Element[%xStyleOpen, %any:*, %xStyleClose]            {% ([{ tag, body }]) => ({ kind: "XMLElement", tag, content: mergeValue(body) }) %}
-                  | Element[%xExplanationOpen, Main, %xExplanationClose] {% ([{ tag, body }]) => ({ kind: "XMLElement", tag, content: body }) %} 
-LineXMLElement -> Element[%xTableOpen, Table, %xTableClose]             {% ([{ tag, body }]) => ({ kind: "XMLElement", tag, content: body }) %} 
+XMLElement     -> VoidElement[%xStyleOpen, %any:*, %xStyleClose]        {% ([{ tag, body }]) => ({ kind: "XMLElement", tag, content: mergeValue(body) }) %}
+                  | VoidElement[%xExplanationOpen, Main, %xExplanationClose] {% ([{ tag, body }]) => ({ kind: "XMLElement", tag, content: body }) %} 
+LineXMLElement -> Element[%xTableOpen, Table, %xTableClose]             {% ([{ tag, attributes, body }]) => ({ kind: "XMLElement", tag, attributes, content: body }) %} 
+XMLAttribute   -> %spaces %identifiable:+ "=" "\"" Text:* "\""          {% ([ , key,,, value ]) => ({ kind: "XMLAttribute", key: mergeValue(key), value: value.join('') }) %}
 BlockMath      -> %blockMathOpen %any:+ %blockMathClose                 {% ([ , content ]) => ({ kind: "Math", inline: false, content: mergeValue(content) }) %}
 InlineMath     -> %inlineMathOpen %any:+ %inlineMathClose               {% ([ , content ]) => ({ kind: "Math", inline: true, content: mergeValue(content) }) %}
 
