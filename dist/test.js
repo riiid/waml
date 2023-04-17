@@ -6,7 +6,10 @@ import { sanitizeWAML } from "./sanitize-waml.js";
 const example = `
 @passage 123
 
-# 위 밑줄 친 단어의 뜻으로 적절하지 않은 것은?
+# 다음 글의 빈 칸에 들어갈 말로 가장 적절한것은?
+
+[[Box]]
+> Pay attention to the listener. Sometimes people may __                 __. Don’t say, “Why aren’t you listening to me?” Change the topic, or your partner will fall asleep. Give the other person a chance to talk.
 
 {1} 123
 {2} 234
@@ -22,12 +25,12 @@ const example = `
 const document = parseWAML(example);
 if ('error' in document)
     throw Error(document.message);
-assert.equal(sanitizeWAML(document), `위 밑줄 친 단어의 뜻으로 적절하지 않은 것은?
-123
-234
-345
+assert.equal(sanitizeWAML(document, { showOptionLabels: true }), `다음 글의 빈 칸에 들어갈 말로 가장 적절한것은?
+Pay attention to the listener. Sometimes people may                  . Don’t say, “Why aren’t you listening to me?” Change the topic, or your partner will fall asleep. Give the other person a chance to talk.
+① 123
+② 234
+③ 345
 55
 해당 글에서 head는 '~로 향하다'라는 의미의 동사이다.`);
 assert.equal(findAnswer(document), "4");
 assert.equal(findReferences(document)[0].name, "passage");
-console.log(parseWAML(">"));

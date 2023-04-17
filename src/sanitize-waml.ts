@@ -1,14 +1,14 @@
 import { hasKind, isMooToken, WAML } from "./type.js";
+import { getCircledLetter } from "./utility.js";
 
-export function sanitizeWAML(document:WAML.Document):string{
-  const R:string[] = [];
+type SanitizationOptions = {
+  'showOptionLabels'?: boolean
+};
+export function sanitizeWAML(document:WAML.Document, { showOptionLabels = false }:SanitizationOptions = {}):string{
+  return iterate(document).trim();
 
-  iterate(document);
-
-  return R.join('\n');
-
-  function iterate(nodes:WAML.Document|WAML.Inline[]):void{
-    const line:string[] = [];
+  function iterate(nodes:WAML.Document|WAML.Inline[], initialLine:string[] = []):string{
+    const line = initialLine;
 
     for(const v of nodes){
       if(typeof v === "string"){
@@ -20,7 +20,7 @@ export function sanitizeWAML(document:WAML.Document):string{
       }
       if(hasKind(v, "XMLElement")){
         if(v.tag === "explanation"){
-          iterate(v.content);
+          line.push(iterate(v.content) + "\n");
         }
         continue;
       }
@@ -35,35 +35,46 @@ export function sanitizeWAML(document:WAML.Document):string{
           case "ClassedBlock": continue;
           case "Directive":
             if(v.component.name === "answer" && v.component.option.type === "shortLingualOption"){
-              R.push(v.component.option.value);
+              line.push(v.component.option.value + "\n");
             }
             continue;
-          case "Footnote":
           case "LineComponent":
-            iterate(v.component.inlines);
+            line.push(iterate(
+              v.component.inlines,
+              v.component.headOption && showOptionLabels ? [ `${getCircledLetter(v.component.headOption.value)} ` ] : []
+            ) + "\n");
+            continue;
+          case "Footnote":
+            line.push(iterate(v.component.inlines) + "\n");
             continue;
           case "Math":
-            R.push(v.component.content);
+            line.push(v.component.content + "\n");
             continue;
         }
       }
-      if(isMooToken(v, 'option') || isMooToken(v, 'shortLingualOption')){
+      if(isMooToken(v, 'option')){
+        if(showOptionLabels){
+          line.push(getCircledLetter(v.value));
+        }
+        continue;
+      }
+      if(isMooToken(v, 'shortLingualOption')){
         continue;
       }
       if(isMooToken(v, 'medium')){
-        R.push(`[${v.value.title}]`);
+        line.push(`[${v.value.title}]\n`);
         continue;
       }
       switch(v.kind){
         case "ClassedInline":
         case "StyledInline":
-          iterate(v.inlines);
+          line.push(iterate(v.inlines));
           continue;
         case "Math":
-          R.push(v.content);
+          line.push(v.content + "\n");
           continue;
       }
     }
-    if(line.length) R.push(line.join(''));
+    return line.join('');
   }
 }
