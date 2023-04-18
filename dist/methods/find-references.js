@@ -1,4 +1,4 @@
-import { hasKind, isMooToken } from "./type.js";
+import { hasKind, isMooToken } from "../type.js";
 export function findReferences(document) {
     const R = [];
     for (const v of document) {

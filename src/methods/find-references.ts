@@ -1,4 +1,4 @@
-import { hasKind, isMooToken, WAML } from "./type.js";
+import { hasKind, isMooToken, WAML } from "../type.js";
 
 type PassageImportToken = WAML.Directive&{ 'name': "passage" };
 type MediumToken = WAML.MooToken<'medium'>;

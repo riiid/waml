@@ -20,6 +20,7 @@ function id(x) { return x[0]; }
 
     dAnswer: "@answer",
     dPassage: "@passage",
+    sStrikethroughOpen: { match: /~~/, push: "sStrikethrough" },
     sUnderlineOpen: { match: /__/, push: "sUnderline" },
     sBoldOpen: { match: /\*\*/, push: "sBold" },
     footnote: "*)",
@@ -104,6 +105,10 @@ function id(x) { return x[0]; }
     },
     sItalic: {
       sItalicClose: { match: /(?<!\\)\*/, pop: 1 },
+      ...withoutXML
+    },
+    sStrikethrough: {
+      sStrikethroughClose: { match: /~~/, pop: 1 },
       ...withoutXML
     },
     sUnderline: {
@@ -207,6 +212,9 @@ var grammar = {
     {"name": "StyledInline$ebnf$3", "symbols": ["Inline"]},
     {"name": "StyledInline$ebnf$3", "symbols": ["StyledInline$ebnf$3", "Inline"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "StyledInline", "symbols": [(lexer.has("sItalicOpen") ? {type: "sItalicOpen"} : sItalicOpen), "StyledInline$ebnf$3", (lexer.has("sItalicClose") ? {type: "sItalicClose"} : sItalicClose)], "postprocess": ([ , inlines ]) => ({ kind: "StyledInline", style: "italic", inlines })},
+    {"name": "StyledInline$ebnf$4", "symbols": ["Inline"]},
+    {"name": "StyledInline$ebnf$4", "symbols": ["StyledInline$ebnf$4", "Inline"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "StyledInline", "symbols": [(lexer.has("sStrikethroughOpen") ? {type: "sStrikethroughOpen"} : sStrikethroughOpen), "StyledInline$ebnf$4", (lexer.has("sStrikethroughClose") ? {type: "sStrikethroughClose"} : sStrikethroughClose)], "postprocess": ([ , inlines ]) => ({ kind: "StyledInline", style: "strikethrough", inlines })},
     {"name": "ClassedBlock$ebnf$1", "symbols": [(lexer.has("identifiable") ? {type: "identifiable"} : identifiable)]},
     {"name": "ClassedBlock$ebnf$1", "symbols": ["ClassedBlock$ebnf$1", (lexer.has("identifiable") ? {type: "identifiable"} : identifiable)], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "ClassedBlock", "symbols": [(lexer.has("classOpen") ? {type: "classOpen"} : classOpen), "ClassedBlock$ebnf$1", (lexer.has("classClose") ? {type: "classClose"} : classClose)], "postprocess": ([ , name ]) => ({ kind: "ClassedBlock", name: mergeValue(name) })},

@@ -1,10 +1,10 @@
-import { hasKind, isMooToken, WAML } from "./type.js";
-import { getCircledLetter } from "./utility.js";
+import { hasKind, isMooToken, WAML } from "../type.js";
+import { getCircledLetter } from "../utility.js";
 
-type SanitizationOptions = {
+export type SanitizationOptions = {
   'showOptionLabels'?: boolean
 };
-export function sanitizeWAML(document:WAML.Document, { showOptionLabels = false }:SanitizationOptions = {}):string{
+export function sanitize(document:WAML.Document, { showOptionLabels = false }:SanitizationOptions):string{
   return iterate(document).trim();
 
   function iterate(nodes:WAML.Document|WAML.Inline[], initialLine:string[] = []):string{

@@ -1,4 +1,4 @@
-import { WAML } from "./type.js";
+import { WAML } from "../type.js";
 type MediumToken = WAML.MooToken<'medium'>;
 export declare function findReferences(document: WAML.Document): (({
     kind: "Directive";

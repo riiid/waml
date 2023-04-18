@@ -16,6 +16,7 @@
 
     dAnswer: "@answer",
     dPassage: "@passage",
+    sStrikethroughOpen: { match: /~~/, push: "sStrikethrough" },
     sUnderlineOpen: { match: /__/, push: "sUnderline" },
     sBoldOpen: { match: /\*\*/, push: "sBold" },
     footnote: "*)",
@@ -102,6 +103,10 @@
       sItalicClose: { match: /(?<!\\)\*/, pop: 1 },
       ...withoutXML
     },
+    sStrikethrough: {
+      sStrikethroughClose: { match: /~~/, pop: 1 },
+      ...withoutXML
+    },
     sUnderline: {
       sUnderlineClose: { match: /__/, pop: 1 },
       ...withoutXML
@@ -183,6 +188,7 @@ Text           -> %identifiable                                         {% ([ to
 StyledInline   -> %sUnderlineOpen Inline:* %sUnderlineClose             {% ([ , inlines ]) => ({ kind: "StyledInline", style: "underline", inlines }) %}
                   | %sBoldOpen Inline:* %sBoldClose                     {% ([ , inlines ]) => ({ kind: "StyledInline", style: "bold", inlines }) %}
                   | %sItalicOpen Inline:+ %sItalicClose                 {% ([ , inlines ]) => ({ kind: "StyledInline", style: "italic", inlines }) %}
+                  | %sStrikethroughOpen Inline:+ %sStrikethroughClose   {% ([ , inlines ]) => ({ kind: "StyledInline", style: "strikethrough", inlines }) %}
 ClassedBlock   -> %classOpen %identifiable:+ %classClose                {% ([ , name ]) => ({ kind: "ClassedBlock", name: mergeValue(name) }) %}
 ClassedInline  -> %classOpen %identifiable:+ ":" Inline:+ %classClose   {% ([ , name,, inlines ]) => ({ kind: "ClassedInline", name: mergeValue(name), inlines: trimArray(inlines) }) %}
 

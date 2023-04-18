@@ -1,6 +1,6 @@
-import { hasKind, isMooToken } from "./type.js";
-import { getCircledLetter } from "./utility.js";
-export function sanitizeWAML(document, { showOptionLabels = false } = {}) {
+import { hasKind, isMooToken } from "../type.js";
+import { getCircledLetter } from "../utility.js";
+export function sanitize(document, { showOptionLabels = false }) {
     return iterate(document).trim();
     function iterate(nodes, initialLine = []) {
         const line = initialLine;
