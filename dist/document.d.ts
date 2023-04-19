@@ -1,10 +1,10 @@
 import { SanitizationOptions } from "./methods/sanitize-waml.js";
 import { WAML } from "./type.js";
 export declare class WAMLDocument {
-    readonly document: WAML.Document;
+    readonly raw: WAML.Document;
     constructor(text: string);
     sanitize(options?: SanitizationOptions): string;
-    findAnswer(): string | null;
+    findAnswer(): WAML.Answer[];
     findReferences(): (({
         kind: "Directive";
         name: "passage";

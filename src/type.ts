@@ -5,6 +5,21 @@ export namespace WAML {
     message: string;
     stack?: string[];
   };
+  export type Answer = 
+    | {
+        type: "Single";
+        value: string;
+      }
+    | {
+        type: "Multiple";
+        value: string[];
+        ordered: boolean;
+      }
+    | {
+        type: "Combined";
+        children: Exclude<Answer, { type: "Combined" }>[]
+      }
+  ;
 
   export enum LinePrefix {
     QUESTION = "#",
@@ -23,20 +38,26 @@ export namespace WAML {
     | Footnote
     | {
         kind: "LineComponent";
-        headOption?: MooToken<"option">;
+        headOption?: SingleValued<ChoiceOption>;
         inlines: Inline[];
       }
     | LineXMLElement
     | null;
   export type Inline =
-    | MooToken<"option">
-    | MooToken<"shortLingualOption">
+    | SingleValued<InlineOption>
     | MooToken<"medium">
     | Math<true>
     | StyledInline
     | ClassedInline
     | string;
-  type StyledInline = {
+  export type InlineOption = ChoiceOption | ButtonOption | ShortLingualOption;
+  export type ChoiceOption = ObjectiveOption<"ChoiceOption">;
+  export type ButtonOption = ObjectiveOption<"ButtonOption">;
+  export type ShortLingualOption = {
+    kind: "ShortLingualOption";
+    value: string;
+  };
+  export type StyledInline = {
     kind: "StyledInline";
     style: string;
     inlines: Inline[];
@@ -49,7 +70,7 @@ export namespace WAML {
     kind: "ClassedBlock";
     name: string;
   };
-  type ClassedInline = {
+  export type ClassedInline = {
     kind: "ClassedInline";
     name: string;
     inlines: Inline[];
@@ -58,14 +79,14 @@ export namespace WAML {
     | {
         kind: "Directive";
         name: "answer";
-        option: MooToken<"option">|MooToken<"shortLingualOption">;
+        options: InlineOption[];
       }
     | {
         kind: "Directive";
         name: "passage";
         path: string;
       };
-  type Math<I extends boolean> = {
+  export type Math<I extends boolean> = {
     kind: "Math";
     inline: I;
     content: string;
@@ -82,7 +103,7 @@ export namespace WAML {
         content: Document;
       }
   ;
-  type XMLAttribute = {
+  export type XMLAttribute = {
     kind: "XMLAttribute",
     key: string,
     value: string
@@ -115,8 +136,6 @@ export namespace WAML {
   };
   type MooTokenValueTable = {
     prefix: string;
-    option: string;
-    shortLingualOption: string;
     longLingualOption: string;
     lineComment: string;
     medium: {
@@ -126,6 +145,20 @@ export namespace WAML {
     };
     rowSeparator: "===";
   };
+
+  type ObjectiveOption<T extends string> = 
+    | {
+        kind: T;
+        value: string;
+        ordered: undefined;
+      }
+    | {
+        kind: T;
+        value: string[];
+        ordered: boolean;
+      }
+  ;
+  type SingleValued<T extends InlineOption> = T & { value: string };
 }
 
 export function isMooToken<T extends WAML.MooTokenType>(

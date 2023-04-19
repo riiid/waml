@@ -11,8 +11,9 @@
 
     prefix: PREFIXES,
     longLingualOption: { match: /\{{3}.*?\}{3}/, value: chunk => chunk.slice(3, -3) },
-    shortLingualOption: { match: /\{{2}.*?\}{2}/, value: chunk => chunk.slice(2, -2) },
-    option: { match: /(?<!\\)\{.+?\}/, value: chunk => chunk.slice(1, -1) },
+    shortLingualOptionOpen: { match: /{{/, push: "option" },
+    buttonOptionOpen: { match: /{\[/, push: "option" },
+    choiceOptionOpen: { match: /{/, push: "option" },
 
     dAnswer: "@answer",
     dPassage: "@passage",
@@ -86,6 +87,15 @@
         };
       }},
       ...omit(main, 'classClose')
+    },
+    option: {
+      shortLingualOptionClose: { match: /}}/, pop: 1 },
+      buttonOptionClose: { match: /]}/, pop: 1 },
+      choiceOptionClose: { match: /}/, pop: 1 },
+      orderedOptionSeparator: /\s*->\s*/,
+      unorderedOptionSeparator: /\s*,\s*/,
+      any: /./,
+      ...withoutXML
     },
     blockMath: {
       blockMathClose: { match: "$$", pop: 1 },
@@ -165,16 +175,15 @@ LineComponent  -> BlockMath                                             {% id %}
                   | %footnote Inline:+                                  {% ([ , inlines ]) => ({ kind: "Footnote", inlines: trimArray(inlines) }) %}
                   | Inline:+                                            {% ([ inlines ], _, reject) => {
                                                                           if(PREFIXES.includes(inlines[0])) return reject;
-                                                                          if(inlines[0]?.type === "option"){
+                                                                          if(inlines[0]?.kind === "ChoiceOption"){
                                                                             return { kind: "LineComponent", headOption: inlines[0], inlines: trimArray(inlines.slice(1)) };
                                                                           }
                                                                           return { kind: "LineComponent", inlines };
                                                                         }%}
                   | LineXMLElement                                      {% id %}
-Directive      -> %dAnswer %spaces (%option | %shortLingualOption)      {% ([ ,, [ option ] ]) => ({ kind: "Directive", name: "answer", option }) %}
+Directive      -> %dAnswer %spaces InlineOption:+                       {% ([ ,, options ]) => ({ kind: "Directive", name: "answer", options }) %}
                   | %dPassage %spaces Text:+                            {% ([ ,, path ]) => ({ kind: "Directive", name: "passage", path: path.join('') }) %}
-Inline         -> %option                                               {% id %}
-                  | %shortLingualOption                                 {% id %}
+Inline         -> InlineOption                                          {% id %}
                   | %medium                                             {% id %}
                   | %spaces                                             {% ([ token ]) => token.value %}
                   | InlineMath                                          {% id %}
@@ -228,3 +237,20 @@ Cell           -> (%cellOpen | %inlineCellOpen) Main %cellClose         {% ([ [ 
                                                                             body
                                                                           };
                                                                         }%}
+
+InlineOption   -> ChoiceOption                                          {% id %}
+                  | ButtonOption                                        {% id %}
+                  | ShortLingualOption                                  {% id %}
+ChoiceOption   -> %choiceOptionOpen %any:+ OptionRest:? %choiceOptionClose {% ([ , first, rest ]) => ({
+                                                                          kind: "ChoiceOption",
+                                                                          value: rest ? [ mergeValue(first), ...rest.value ] : mergeValue(first),
+                                                                          ordered: rest ? rest.kind === "OrderedOptionRest" : undefined
+                                                                        })%}
+ButtonOption   -> %buttonOptionOpen %any:+ OptionRest:? %buttonOptionClose {% ([ , first, rest ]) => ({
+                                                                          kind: "ButtonOption",
+                                                                          value: rest ? [ mergeValue(first), ...rest.value ] : mergeValue(first),
+                                                                          ordered: rest ? rest.kind === "OrderedOptionRest" : undefined
+                                                                        })%}
+OptionRest     -> (%orderedOptionSeparator %any:+):+                    {% ([ list ]) => ({ kind: "OrderedOptionRest", value: list.map(v => mergeValue(v[1])) }) %}
+                  | (%unorderedOptionSeparator %any:+):+                {% ([ list ]) => ({ kind: "UnorderedOptionRest", value: list.map(v => mergeValue(v[1])) }) %}
+ShortLingualOption -> %shortLingualOptionOpen %any:* %shortLingualOptionClose {% ([ , value ]) => ({ kind: "ShortLingualOption", value: mergeValue(value) }) %}

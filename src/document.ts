@@ -4,7 +4,7 @@ import { parseWAML } from "./parse-waml.js";
 import { hasKind, WAML } from "./type.js";
 
 export class WAMLDocument{
-  public readonly document:WAML.Document;
+  public readonly raw:WAML.Document;
   
   constructor(text:string){
     const document = parseWAML(text);
@@ -12,20 +12,41 @@ export class WAMLDocument{
     if('error' in document){
       throw SyntaxError(`Unable to parse the text: ${document.message}\n${document.stack.join('\n')}`);
     }
-    this.document = document;
+    this.raw = document;
   }
   public sanitize(options:SanitizationOptions = {}):string{
-    return sanitize(this.document, options);
+    return sanitize(this.raw, options);
   }
-  public findAnswer():string|null{
-    for(const v of this.document){
+  public findAnswer():WAML.Answer[]{
+    const R:WAML.Answer[] = [];
+
+    for(const v of this.raw){
       if(typeof v === "string" || !hasKind(v, "Line")) continue;
       if(!hasKind(v.component, "Directive") || v.component.name !== "answer") continue;
-      return v.component.option.value;
+
+      if(v.component.options.length > 1){
+        R.push({
+          type: "Combined",
+          children: v.component.options.map(parse)
+        })
+      }else{
+        R.push(parse(v.component.options[0]));
+      }
+      function parse(option:WAML.InlineOption):Exclude<WAML.Answer, { type: "Combined" }>{
+        switch(option.kind){
+          case "ShortLingualOption": return { type: "Single", value: option.value };
+          case "ButtonOption":
+          case "ChoiceOption":
+            if(typeof option.value === "string"){
+              return { type: "Single", value: option.value };
+            }
+            return { type: "Multiple", value: option.value, ordered: option.ordered };
+        }
+      }
     }
-    return null;
+    return R;
   }
   public findReferences(){
-    return findReferences(this.document);
+    return findReferences(this.raw);
   }
 }

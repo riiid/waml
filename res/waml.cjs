@@ -15,8 +15,9 @@ function id(x) { return x[0]; }
 
     prefix: PREFIXES,
     longLingualOption: { match: /\{{3}.*?\}{3}/, value: chunk => chunk.slice(3, -3) },
-    shortLingualOption: { match: /\{{2}.*?\}{2}/, value: chunk => chunk.slice(2, -2) },
-    option: { match: /(?<!\\)\{.+?\}/, value: chunk => chunk.slice(1, -1) },
+    shortLingualOptionOpen: { match: /{{/, push: "option" },
+    buttonOptionOpen: { match: /{\[/, push: "option" },
+    choiceOptionOpen: { match: /{/, push: "option" },
 
     dAnswer: "@answer",
     dPassage: "@passage",
@@ -90,6 +91,15 @@ function id(x) { return x[0]; }
         };
       }},
       ...omit(main, 'classClose')
+    },
+    option: {
+      shortLingualOptionClose: { match: /}}/, pop: 1 },
+      buttonOptionClose: { match: /]}/, pop: 1 },
+      choiceOptionClose: { match: /}/, pop: 1 },
+      orderedOptionSeparator: /\s*->\s*/,
+      unorderedOptionSeparator: /\s*,\s*/,
+      any: /./,
+      ...withoutXML
     },
     blockMath: {
       blockMathClose: { match: "$$", pop: 1 },
@@ -179,20 +189,19 @@ var grammar = {
     {"name": "LineComponent$ebnf$2", "symbols": ["LineComponent$ebnf$2", "Inline"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "LineComponent", "symbols": ["LineComponent$ebnf$2"], "postprocess":  ([ inlines ], _, reject) => {
           if(PREFIXES.includes(inlines[0])) return reject;
-          if(inlines[0]?.type === "option"){
+          if(inlines[0]?.kind === "ChoiceOption"){
             return { kind: "LineComponent", headOption: inlines[0], inlines: trimArray(inlines.slice(1)) };
           }
           return { kind: "LineComponent", inlines };
         }},
     {"name": "LineComponent", "symbols": ["LineXMLElement"], "postprocess": id},
-    {"name": "Directive$subexpression$1", "symbols": [(lexer.has("option") ? {type: "option"} : option)]},
-    {"name": "Directive$subexpression$1", "symbols": [(lexer.has("shortLingualOption") ? {type: "shortLingualOption"} : shortLingualOption)]},
-    {"name": "Directive", "symbols": [(lexer.has("dAnswer") ? {type: "dAnswer"} : dAnswer), (lexer.has("spaces") ? {type: "spaces"} : spaces), "Directive$subexpression$1"], "postprocess": ([ ,, [ option ] ]) => ({ kind: "Directive", name: "answer", option })},
-    {"name": "Directive$ebnf$1", "symbols": ["Text"]},
-    {"name": "Directive$ebnf$1", "symbols": ["Directive$ebnf$1", "Text"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "Directive", "symbols": [(lexer.has("dPassage") ? {type: "dPassage"} : dPassage), (lexer.has("spaces") ? {type: "spaces"} : spaces), "Directive$ebnf$1"], "postprocess": ([ ,, path ]) => ({ kind: "Directive", name: "passage", path: path.join('') })},
-    {"name": "Inline", "symbols": [(lexer.has("option") ? {type: "option"} : option)], "postprocess": id},
-    {"name": "Inline", "symbols": [(lexer.has("shortLingualOption") ? {type: "shortLingualOption"} : shortLingualOption)], "postprocess": id},
+    {"name": "Directive$ebnf$1", "symbols": ["InlineOption"]},
+    {"name": "Directive$ebnf$1", "symbols": ["Directive$ebnf$1", "InlineOption"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "Directive", "symbols": [(lexer.has("dAnswer") ? {type: "dAnswer"} : dAnswer), (lexer.has("spaces") ? {type: "spaces"} : spaces), "Directive$ebnf$1"], "postprocess": ([ ,, options ]) => ({ kind: "Directive", name: "answer", options })},
+    {"name": "Directive$ebnf$2", "symbols": ["Text"]},
+    {"name": "Directive$ebnf$2", "symbols": ["Directive$ebnf$2", "Text"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "Directive", "symbols": [(lexer.has("dPassage") ? {type: "dPassage"} : dPassage), (lexer.has("spaces") ? {type: "spaces"} : spaces), "Directive$ebnf$2"], "postprocess": ([ ,, path ]) => ({ kind: "Directive", name: "passage", path: path.join('') })},
+    {"name": "Inline", "symbols": ["InlineOption"], "postprocess": id},
     {"name": "Inline", "symbols": [(lexer.has("medium") ? {type: "medium"} : medium)], "postprocess": id},
     {"name": "Inline", "symbols": [(lexer.has("spaces") ? {type: "spaces"} : spaces)], "postprocess": ([ token ]) => token.value},
     {"name": "Inline", "symbols": ["InlineMath"], "postprocess": id},
@@ -297,7 +306,49 @@ var grammar = {
             rowspan: close.value.rowspan,
             body
           };
-        }}
+        }},
+    {"name": "InlineOption", "symbols": ["ChoiceOption"], "postprocess": id},
+    {"name": "InlineOption", "symbols": ["ButtonOption"], "postprocess": id},
+    {"name": "InlineOption", "symbols": ["ShortLingualOption"], "postprocess": id},
+    {"name": "ChoiceOption$ebnf$1", "symbols": [(lexer.has("any") ? {type: "any"} : any)]},
+    {"name": "ChoiceOption$ebnf$1", "symbols": ["ChoiceOption$ebnf$1", (lexer.has("any") ? {type: "any"} : any)], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "ChoiceOption$ebnf$2", "symbols": ["OptionRest"], "postprocess": id},
+    {"name": "ChoiceOption$ebnf$2", "symbols": [], "postprocess": function(d) {return null;}},
+    {"name": "ChoiceOption", "symbols": [(lexer.has("choiceOptionOpen") ? {type: "choiceOptionOpen"} : choiceOptionOpen), "ChoiceOption$ebnf$1", "ChoiceOption$ebnf$2", (lexer.has("choiceOptionClose") ? {type: "choiceOptionClose"} : choiceOptionClose)], "postprocess":  ([ , first, rest ]) => ({
+          kind: "ChoiceOption",
+          value: rest ? [ mergeValue(first), ...rest.value ] : mergeValue(first),
+          ordered: rest ? rest.kind === "OrderedOptionRest" : undefined
+        })},
+    {"name": "ButtonOption$ebnf$1", "symbols": [(lexer.has("any") ? {type: "any"} : any)]},
+    {"name": "ButtonOption$ebnf$1", "symbols": ["ButtonOption$ebnf$1", (lexer.has("any") ? {type: "any"} : any)], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "ButtonOption$ebnf$2", "symbols": ["OptionRest"], "postprocess": id},
+    {"name": "ButtonOption$ebnf$2", "symbols": [], "postprocess": function(d) {return null;}},
+    {"name": "ButtonOption", "symbols": [(lexer.has("buttonOptionOpen") ? {type: "buttonOptionOpen"} : buttonOptionOpen), "ButtonOption$ebnf$1", "ButtonOption$ebnf$2", (lexer.has("buttonOptionClose") ? {type: "buttonOptionClose"} : buttonOptionClose)], "postprocess":  ([ , first, rest ]) => ({
+          kind: "ButtonOption",
+          value: rest ? [ mergeValue(first), ...rest.value ] : mergeValue(first),
+          ordered: rest ? rest.kind === "OrderedOptionRest" : undefined
+        })},
+    {"name": "OptionRest$ebnf$1$subexpression$1$ebnf$1", "symbols": [(lexer.has("any") ? {type: "any"} : any)]},
+    {"name": "OptionRest$ebnf$1$subexpression$1$ebnf$1", "symbols": ["OptionRest$ebnf$1$subexpression$1$ebnf$1", (lexer.has("any") ? {type: "any"} : any)], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "OptionRest$ebnf$1$subexpression$1", "symbols": [(lexer.has("orderedOptionSeparator") ? {type: "orderedOptionSeparator"} : orderedOptionSeparator), "OptionRest$ebnf$1$subexpression$1$ebnf$1"]},
+    {"name": "OptionRest$ebnf$1", "symbols": ["OptionRest$ebnf$1$subexpression$1"]},
+    {"name": "OptionRest$ebnf$1$subexpression$2$ebnf$1", "symbols": [(lexer.has("any") ? {type: "any"} : any)]},
+    {"name": "OptionRest$ebnf$1$subexpression$2$ebnf$1", "symbols": ["OptionRest$ebnf$1$subexpression$2$ebnf$1", (lexer.has("any") ? {type: "any"} : any)], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "OptionRest$ebnf$1$subexpression$2", "symbols": [(lexer.has("orderedOptionSeparator") ? {type: "orderedOptionSeparator"} : orderedOptionSeparator), "OptionRest$ebnf$1$subexpression$2$ebnf$1"]},
+    {"name": "OptionRest$ebnf$1", "symbols": ["OptionRest$ebnf$1", "OptionRest$ebnf$1$subexpression$2"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "OptionRest", "symbols": ["OptionRest$ebnf$1"], "postprocess": ([ list ]) => ({ kind: "OrderedOptionRest", value: list.map(v => mergeValue(v[1])) })},
+    {"name": "OptionRest$ebnf$2$subexpression$1$ebnf$1", "symbols": [(lexer.has("any") ? {type: "any"} : any)]},
+    {"name": "OptionRest$ebnf$2$subexpression$1$ebnf$1", "symbols": ["OptionRest$ebnf$2$subexpression$1$ebnf$1", (lexer.has("any") ? {type: "any"} : any)], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "OptionRest$ebnf$2$subexpression$1", "symbols": [(lexer.has("unorderedOptionSeparator") ? {type: "unorderedOptionSeparator"} : unorderedOptionSeparator), "OptionRest$ebnf$2$subexpression$1$ebnf$1"]},
+    {"name": "OptionRest$ebnf$2", "symbols": ["OptionRest$ebnf$2$subexpression$1"]},
+    {"name": "OptionRest$ebnf$2$subexpression$2$ebnf$1", "symbols": [(lexer.has("any") ? {type: "any"} : any)]},
+    {"name": "OptionRest$ebnf$2$subexpression$2$ebnf$1", "symbols": ["OptionRest$ebnf$2$subexpression$2$ebnf$1", (lexer.has("any") ? {type: "any"} : any)], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "OptionRest$ebnf$2$subexpression$2", "symbols": [(lexer.has("unorderedOptionSeparator") ? {type: "unorderedOptionSeparator"} : unorderedOptionSeparator), "OptionRest$ebnf$2$subexpression$2$ebnf$1"]},
+    {"name": "OptionRest$ebnf$2", "symbols": ["OptionRest$ebnf$2", "OptionRest$ebnf$2$subexpression$2"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "OptionRest", "symbols": ["OptionRest$ebnf$2"], "postprocess": ([ list ]) => ({ kind: "UnorderedOptionRest", value: list.map(v => mergeValue(v[1])) })},
+    {"name": "ShortLingualOption$ebnf$1", "symbols": []},
+    {"name": "ShortLingualOption$ebnf$1", "symbols": ["ShortLingualOption$ebnf$1", (lexer.has("any") ? {type: "any"} : any)], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "ShortLingualOption", "symbols": [(lexer.has("shortLingualOptionOpen") ? {type: "shortLingualOptionOpen"} : shortLingualOptionOpen), "ShortLingualOption$ebnf$1", (lexer.has("shortLingualOptionClose") ? {type: "shortLingualOptionClose"} : shortLingualOptionClose)], "postprocess": ([ , value ]) => ({ kind: "ShortLingualOption", value: mergeValue(value) })}
 ]
   , ParserStart: "Main"
 }

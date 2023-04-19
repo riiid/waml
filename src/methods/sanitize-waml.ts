@@ -34,8 +34,11 @@ export function sanitize(document:WAML.Document, { showOptionLabels = false }:Sa
         switch(v.component.kind){
           case "ClassedBlock": continue;
           case "Directive":
-            if(v.component.name === "answer" && v.component.option.type === "shortLingualOption"){
-              line.push(v.component.option.value + "\n");
+            if(v.component.name === "answer"){
+              for(const w of v.component.options){
+                if(w.kind !== "ShortLingualOption") continue;
+                line.push(w.value + "\n");
+              }
             }
             continue;
           case "LineComponent":
@@ -52,20 +55,17 @@ export function sanitize(document:WAML.Document, { showOptionLabels = false }:Sa
             continue;
         }
       }
-      if(isMooToken(v, 'option')){
-        if(showOptionLabels){
-          line.push(getCircledLetter(v.value));
-        }
-        continue;
-      }
-      if(isMooToken(v, 'shortLingualOption')){
-        continue;
-      }
       if(isMooToken(v, 'medium')){
         line.push(`[${v.value.title}]\n`);
         continue;
       }
       switch(v.kind){
+        case "ChoiceOption":
+        case "ButtonOption":
+          if(showOptionLabels){
+            line.push(getCircledLetter(v.value));
+          }
+          continue;
         case "ClassedInline":
         case "StyledInline":
           line.push(iterate(v.inlines));
