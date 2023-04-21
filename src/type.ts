@@ -6,18 +6,21 @@ export namespace WAML {
     stack?: string[];
   };
   export type Answer = 
+    // NOTE Single-valued answer's value type is also an array for Backend friendliness.
     | {
-        type: "Single";
-        value: string;
+        type: "SINGLE";
+        by: InlineOption['kind'];
+        value: string[];
       }
     | {
-        type: "Multiple";
+        type: "MULTIPLE";
+        by: InlineOption['kind'];
         value: string[];
         ordered: boolean;
       }
     | {
-        type: "Combined";
-        children: Exclude<Answer, { type: "Combined" }>[]
+        type: "COMBINED";
+        children: Exclude<Answer, { type: "COMBINED" }>[]
       }
   ;
 
@@ -38,18 +41,19 @@ export namespace WAML {
     | Footnote
     | {
         kind: "LineComponent";
-        headOption?: SingleValued<ChoiceOption>;
+        headOption?: ChoiceOption;
         inlines: Inline[];
       }
     | LineXMLElement
     | null;
   export type Inline =
-    | SingleValued<InlineOption>
+    | InlineOption
     | MooToken<"medium">
     | Math<true>
     | StyledInline
     | ClassedInline
     | string;
+  export type Options = AnswerFormOf<InlineOption>[];
   export type InlineOption = ChoiceOption | ButtonOption | ShortLingualOption;
   export type ChoiceOption = ObjectiveOption<"ChoiceOption">;
   export type ButtonOption = ObjectiveOption<"ButtonOption">;
@@ -79,7 +83,7 @@ export namespace WAML {
     | {
         kind: "Directive";
         name: "answer";
-        options: InlineOption[];
+        options: Options;
       }
     | {
         kind: "Directive";
@@ -146,19 +150,15 @@ export namespace WAML {
     rowSeparator: "===";
   };
 
-  type ObjectiveOption<T extends string> = 
-    | {
-        kind: T;
-        value: string;
-        ordered: undefined;
-      }
-    | {
-        kind: T;
-        value: string[];
-        ordered: boolean;
-      }
+  type ObjectiveOption<T extends string> = {
+    kind: T;
+    value: string;
+    ordered: undefined;
+  };
+  type AnswerFormOf<T extends InlineOption> = T extends ChoiceOption | ButtonOption
+    ? T | (Omit<T, 'value' | 'ordered'> & { value: string[]; ordered: boolean })
+    : T
   ;
-  type SingleValued<T extends InlineOption> = T & { value: string };
 }
 
 export function isMooToken<T extends WAML.MooTokenType>(

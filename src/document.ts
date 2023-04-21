@@ -26,21 +26,21 @@ export class WAMLDocument{
 
       if(v.component.options.length > 1){
         R.push({
-          type: "Combined",
+          type: "COMBINED",
           children: v.component.options.map(parse)
         })
       }else{
         R.push(parse(v.component.options[0]));
       }
-      function parse(option:WAML.InlineOption):Exclude<WAML.Answer, { type: "Combined" }>{
+      function parse(option:WAML.Options[number]):Exclude<WAML.Answer, { type: "COMBINED" }>{
         switch(option.kind){
-          case "ShortLingualOption": return { type: "Single", value: option.value };
+          case "ShortLingualOption": return { type: "SINGLE", by: option.kind, value: [ option.value ] };
           case "ButtonOption":
           case "ChoiceOption":
             if(typeof option.value === "string"){
-              return { type: "Single", value: option.value };
+              return { type: "SINGLE", by: option.kind, value: [ option.value ] };
             }
-            return { type: "Multiple", value: option.value, ordered: option.ordered };
+            return { type: "MULTIPLE", by: option.kind, value: option.value, ordered: option.ordered };
         }
       }
     }

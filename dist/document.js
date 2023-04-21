@@ -22,7 +22,7 @@ export class WAMLDocument {
                 continue;
             if (v.component.options.length > 1) {
                 R.push({
-                    type: "Combined",
+                    type: "COMBINED",
                     children: v.component.options.map(parse)
                 });
             }
@@ -31,13 +31,13 @@ export class WAMLDocument {
             }
             function parse(option) {
                 switch (option.kind) {
-                    case "ShortLingualOption": return { type: "Single", value: option.value };
+                    case "ShortLingualOption": return { type: "SINGLE", by: option.kind, value: [option.value] };
                     case "ButtonOption":
                     case "ChoiceOption":
                         if (typeof option.value === "string") {
-                            return { type: "Single", value: option.value };
+                            return { type: "SINGLE", by: option.kind, value: [option.value] };
                         }
-                        return { type: "Multiple", value: option.value, ordered: option.ordered };
+                        return { type: "MULTIPLE", by: option.kind, value: option.value, ordered: option.ordered };
                 }
             }
         }

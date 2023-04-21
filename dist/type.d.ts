@@ -6,16 +6,18 @@ export declare namespace WAML {
         stack?: string[];
     };
     export type Answer = {
-        type: "Single";
-        value: string;
+        type: "SINGLE";
+        by: InlineOption['kind'];
+        value: string[];
     } | {
-        type: "Multiple";
+        type: "MULTIPLE";
+        by: InlineOption['kind'];
         value: string[];
         ordered: boolean;
     } | {
-        type: "Combined";
+        type: "COMBINED";
         children: Exclude<Answer, {
-            type: "Combined";
+            type: "COMBINED";
         }>[];
     };
     export enum LinePrefix {
@@ -29,10 +31,11 @@ export declare namespace WAML {
     };
     export type LineComponent = Math<false> | Directive | ClassedBlock | MooToken<"longLingualOption"> | Footnote | {
         kind: "LineComponent";
-        headOption?: SingleValued<ChoiceOption>;
+        headOption?: ChoiceOption;
         inlines: Inline[];
     } | LineXMLElement | null;
-    export type Inline = SingleValued<InlineOption> | MooToken<"medium"> | Math<true> | StyledInline | ClassedInline | string;
+    export type Inline = InlineOption | MooToken<"medium"> | Math<true> | StyledInline | ClassedInline | string;
+    export type Options = AnswerFormOf<InlineOption>[];
     export type InlineOption = ChoiceOption | ButtonOption | ShortLingualOption;
     export type ChoiceOption = ObjectiveOption<"ChoiceOption">;
     export type ButtonOption = ObjectiveOption<"ButtonOption">;
@@ -61,7 +64,7 @@ export declare namespace WAML {
     export type Directive = {
         kind: "Directive";
         name: "answer";
-        options: InlineOption[];
+        options: Options;
     } | {
         kind: "Directive";
         name: "passage";
@@ -125,14 +128,11 @@ export declare namespace WAML {
         kind: T;
         value: string;
         ordered: undefined;
-    } | {
-        kind: T;
+    };
+    type AnswerFormOf<T extends InlineOption> = T extends ChoiceOption | ButtonOption ? T | (Omit<T, 'value' | 'ordered'> & {
         value: string[];
         ordered: boolean;
-    };
-    type SingleValued<T extends InlineOption> = T & {
-        value: string;
-    };
+    }) : T;
     export {};
 }
 export declare function isMooToken<T extends WAML.MooTokenType>(value: object, type: T): value is WAML.MooToken<T>;
