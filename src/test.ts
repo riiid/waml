@@ -1,5 +1,6 @@
 import * as assert from "assert";
 import { WAMLDocument } from "./document.js";
+import { WAML } from "./type.js";
 
 const example = `
 @passage 123
@@ -30,5 +31,11 @@ Pay attention to the listener. Sometimes people may                  . Don’t s
 55
 해당 글에서 head는 '~로 향하다'라는 의미의 동사이다.`);
 
-assert.equal(document.findAnswer(), "4");
+assert.deepEqual(
+  document.getMetadata().answers,
+  [
+    { type: "SINGLE", by: "ChoiceOption", value: [ "4" ] },
+    { type: "SINGLE", by: "ShortLingualOption", value: [ "55" ] }
+  ] satisfies WAML.Answer[]
+);
 assert.equal((document.findReferences()[0] as any).name, "passage");

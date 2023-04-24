@@ -17,20 +17,20 @@ export class WAMLDocument{
   public sanitize(options:SanitizationOptions = {}):string{
     return sanitize(this.raw, options);
   }
-  public findAnswer():WAML.Answer[]{
-    const R:WAML.Answer[] = [];
+  public getMetadata():WAML.Metadata{
+    const answers:WAML.Answer[] = [];
 
     for(const v of this.raw){
       if(typeof v === "string" || !hasKind(v, "Line")) continue;
       if(!hasKind(v.component, "Directive") || v.component.name !== "answer") continue;
 
       if(v.component.options.length > 1){
-        R.push({
+        answers.push({
           type: "COMBINED",
           children: v.component.options.map(parse)
         })
       }else{
-        R.push(parse(v.component.options[0]));
+        answers.push(parse(v.component.options[0]));
       }
       function parse(option:WAML.Options[number]):Exclude<WAML.Answer, { type: "COMBINED" }>{
         switch(option.kind){
@@ -44,7 +44,7 @@ export class WAMLDocument{
         }
       }
     }
-    return R;
+    return { answers };
   }
   public findReferences(){
     return findReferences(this.raw);

@@ -4,7 +4,7 @@ export declare class WAMLDocument {
     readonly raw: WAML.Document;
     constructor(text: string);
     sanitize(options?: SanitizationOptions): string;
-    findAnswer(): WAML.Answer[];
+    getMetadata(): WAML.Metadata;
     findReferences(): (({
         kind: "Directive";
         name: "passage";

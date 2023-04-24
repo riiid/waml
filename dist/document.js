@@ -13,21 +13,21 @@ export class WAMLDocument {
     sanitize(options = {}) {
         return sanitize(this.raw, options);
     }
-    findAnswer() {
-        const R = [];
+    getMetadata() {
+        const answers = [];
         for (const v of this.raw) {
             if (typeof v === "string" || !hasKind(v, "Line"))
                 continue;
             if (!hasKind(v.component, "Directive") || v.component.name !== "answer")
                 continue;
             if (v.component.options.length > 1) {
-                R.push({
+                answers.push({
                     type: "COMBINED",
                     children: v.component.options.map(parse)
                 });
             }
             else {
-                R.push(parse(v.component.options[0]));
+                answers.push(parse(v.component.options[0]));
             }
             function parse(option) {
                 switch (option.kind) {
@@ -41,7 +41,7 @@ export class WAMLDocument {
                 }
             }
         }
-        return R;
+        return { answers };
     }
     findReferences() {
         return findReferences(this.raw);

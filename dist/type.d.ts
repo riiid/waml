@@ -5,6 +5,9 @@ export declare namespace WAML {
         message: string;
         stack?: string[];
     };
+    export type Metadata = {
+        answers: Answer[];
+    };
     export type Answer = {
         type: "SINGLE";
         by: InlineOption['kind'];

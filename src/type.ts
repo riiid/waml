@@ -5,6 +5,9 @@ export namespace WAML {
     message: string;
     stack?: string[];
   };
+  export type Metadata = {
+    answers: Answer[];
+  };
   export type Answer = 
     // NOTE Single-valued answer's value type is also an array for Backend friendliness.
     | {
