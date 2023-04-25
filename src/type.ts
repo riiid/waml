@@ -12,12 +12,10 @@ export namespace WAML {
     // NOTE Single-valued answer's value type is also an array for Backend friendliness.
     | {
         type: "SINGLE";
-        by: InlineOption['kind'];
         value: string[];
       }
     | {
         type: "MULTIPLE";
-        by: InlineOption['kind'];
         value: string[];
         ordered: boolean;
       }

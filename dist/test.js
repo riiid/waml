@@ -28,7 +28,7 @@ Pay attention to the listener. Sometimes people may                  . Don’t s
 55
 해당 글에서 head는 '~로 향하다'라는 의미의 동사이다.`);
 assert.deepEqual(document.getMetadata().answers, [
-    { type: "SINGLE", by: "ChoiceOption", value: ["4"] },
-    { type: "SINGLE", by: "ShortLingualOption", value: ["55"] }
+    { type: "SINGLE", value: ["4"] },
+    { type: "SINGLE", value: ["55"] }
 ]);
 assert.equal(document.findReferences()[0].name, "passage");

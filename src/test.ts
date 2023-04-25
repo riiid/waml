@@ -34,8 +34,8 @@ Pay attention to the listener. Sometimes people may                  . Don’t s
 assert.deepEqual(
   document.getMetadata().answers,
   [
-    { type: "SINGLE", by: "ChoiceOption", value: [ "4" ] },
-    { type: "SINGLE", by: "ShortLingualOption", value: [ "55" ] }
+    { type: "SINGLE", value: [ "4" ] },
+    { type: "SINGLE", value: [ "55" ] }
   ] satisfies WAML.Answer[]
 );
 assert.equal((document.findReferences()[0] as any).name, "passage");

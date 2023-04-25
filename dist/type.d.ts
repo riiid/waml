@@ -10,11 +10,9 @@ export declare namespace WAML {
     };
     export type Answer = {
         type: "SINGLE";
-        by: InlineOption['kind'];
         value: string[];
     } | {
         type: "MULTIPLE";
-        by: InlineOption['kind'];
         value: string[];
         ordered: boolean;
     } | {

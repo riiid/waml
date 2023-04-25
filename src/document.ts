@@ -34,13 +34,13 @@ export class WAMLDocument{
       }
       function parse(option:WAML.Options[number]):Exclude<WAML.Answer, { type: "COMBINED" }>{
         switch(option.kind){
-          case "ShortLingualOption": return { type: "SINGLE", by: option.kind, value: [ option.value ] };
+          case "ShortLingualOption": return { type: "SINGLE", value: [ option.value ] };
           case "ButtonOption":
           case "ChoiceOption":
             if(typeof option.value === "string"){
-              return { type: "SINGLE", by: option.kind, value: [ option.value ] };
+              return { type: "SINGLE", value: [ option.value ] };
             }
-            return { type: "MULTIPLE", by: option.kind, value: option.value, ordered: option.ordered };
+            return { type: "MULTIPLE", value: option.value, ordered: option.ordered };
         }
       }
     }
