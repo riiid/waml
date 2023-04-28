@@ -1,24 +1,30 @@
-import { WAML } from "./type";
+import { hasKind, isMooToken, WAML } from "./type.js";
 import Nearley from "nearley";
 import Grammar from "../res/waml.cjs";
 
 const grammar = Nearley.Grammar.fromCompiled(Grammar);
 
-export function parseWAML(text:string):WAML.Document|WAML.ParserError{
+type ParsingOptions = {
+  'removeAnswers'?: boolean
+};
+export function parseWAML(text:string, options:ParsingOptions = {}):WAML.Document|WAML.ParserError{
   const parser = new Nearley.Parser(grammar);
 
   try {
     parser.feed(text);
-    if (parser.results.length) {
-      if (parser.results.length > 1) {
-        console.warn(`Ambiguous input (${parser.results.length})`, text);
-      }
-      return parser.results[0];
-    } 
-    return {
-      error: true,
-      message: "Invalid input"
-    };
+    if(!parser.results.length){
+      return {
+        error: true,
+        message: "Invalid input"
+      };
+    }
+    if (parser.results.length > 1) {
+      console.warn(`Ambiguous input (${parser.results.length})`, text);
+    }
+    const R = parser.results[0];
+
+    if(options.removeAnswers) removeAnswers(R);
+    return R;
   } catch (error) {
     if (!isNearleyError(error)) {
       throw error;
@@ -30,6 +36,24 @@ export function parseWAML(text:string):WAML.Document|WAML.ParserError{
       message: chunk[0],
       stack: chunk.slice(2),
     };
+  }
+}
+function removeAnswers(document:WAML.Document):void{
+  for(let i = 0; i < document.length; i++){
+    const v = document[i];
+
+    if(isMooToken(v, "lineComment")){
+      document.splice(i--, 1);
+      continue;
+    }
+    if(v.kind === "XMLElement" && v.tag === "explanation"){
+      document.splice(i--, 1);
+      continue;
+    }
+    if(v.kind === "Line" && hasKind(v.component, "Directive") && v.component.name === "answer"){
+      document.splice(i--, 1);
+      continue;
+    }
   }
 }
 function isNearleyError(error: unknown): error is Error {

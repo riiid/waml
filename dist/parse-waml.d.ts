@@ -1,2 +1,6 @@
-import { WAML } from "./type";
-export declare function parseWAML(text: string): WAML.Document | WAML.ParserError;
+import { WAML } from "./type.js";
+type ParsingOptions = {
+    'removeAnswers'?: boolean;
+};
+export declare function parseWAML(text: string, options?: ParsingOptions): WAML.Document | WAML.ParserError;
+export {};
