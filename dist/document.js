@@ -3,8 +3,8 @@ import { sanitize } from "./methods/sanitize-waml.js";
 import { parseWAML } from "./parse-waml.js";
 import { hasKind } from "./type.js";
 export class WAMLDocument {
-    constructor(text) {
-        const document = parseWAML(text);
+    constructor(data) {
+        const document = typeof data === "string" ? parseWAML(data) : data;
         if ('error' in document) {
             throw SyntaxError(`Unable to parse the text: ${document.message}\n${document.stack.join('\n')}`);
         }
