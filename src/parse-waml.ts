@@ -51,7 +51,10 @@ function removeAnswers(document:WAML.Document):void{
       continue;
     }
     if(v.kind === "Line" && hasKind(v.component, "Directive") && v.component.name === "answer"){
-      document.splice(i--, 1);
+      for(const w of v.component.options){
+        if(typeof w.value === "string") w.value = "";
+        else w.value = [];
+      }
       continue;
     }
   }
