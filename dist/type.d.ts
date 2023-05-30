@@ -1,4 +1,18 @@
+declare const choiceOptionGroupPatterns: {
+    NUMERIC: RegExp;
+    LOWER_ALPHABETIC: RegExp;
+    UPPER_ALPHABETIC: RegExp;
+    HANGEUL_CONSONANTAL: RegExp;
+    HANGEUL_FULL: RegExp;
+    LOWER_ROMAN: RegExp;
+    UPPER_ROMAN: RegExp;
+};
 export declare namespace WAML {
+    export enum InteractionType {
+        CHOICE_OPTION = 0,
+        BUTTON_OPTION = 1,
+        SHORT_LINGUAL_OPTION = 2
+    }
     export type Document = Array<Line | XMLElement | MooToken<"lineComment">>;
     export type ParserError = {
         error: true;
@@ -6,6 +20,9 @@ export declare namespace WAML {
         stack?: string[];
     };
     export type Metadata = {
+        answerFormat: {
+            interactions: Interaction[];
+        };
         answers: Answer[];
     };
     export type Answer = {
@@ -21,6 +38,21 @@ export declare namespace WAML {
             type: "COMBINED";
         }>[];
     };
+    export type Interaction = {
+        index: number;
+    } & ({
+        type: InteractionType.CHOICE_OPTION;
+        group: keyof typeof choiceOptionGroupPatterns;
+        values: string[];
+        multipleness?: "ordered" | "unordered";
+    } | {
+        type: InteractionType.BUTTON_OPTION;
+        values: string[];
+        multipleness?: "ordered" | "unordered";
+    } | {
+        type: InteractionType.SHORT_LINGUAL_OPTION;
+        placeholder: string;
+    });
     export enum LinePrefix {
         QUESTION = "#",
         QUOTATION = ">"
@@ -140,3 +172,5 @@ export declare function isMooToken<T extends WAML.MooTokenType>(value: object, t
 export declare function hasKind<T extends string>(value: object, kind: T): value is {
     kind: T;
 };
+export declare function guessChoiceOptionGroup(value: string): "NUMERIC" | "LOWER_ALPHABETIC" | "UPPER_ALPHABETIC" | "HANGEUL_CONSONANTAL" | "HANGEUL_FULL" | "LOWER_ROMAN" | "UPPER_ROMAN";
+export {};

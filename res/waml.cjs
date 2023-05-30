@@ -94,8 +94,8 @@ function id(x) { return x[0]; }
     },
     option: {
       shortLingualOptionClose: { match: /}}/, pop: 1 },
-      buttonOptionClose: { match: /]}/, pop: 1 },
-      choiceOptionClose: { match: /}/, pop: 1 },
+      buttonOptionClose: { match: /,?]}/, pop: 1 },
+      choiceOptionClose: { match: /,?}/, pop: 1 },
       orderedOptionSeparator: /\s*->\s*/,
       unorderedOptionSeparator: /\s*,\s*/,
       any: /./,
@@ -314,20 +314,26 @@ var grammar = {
     {"name": "ChoiceOption$ebnf$1", "symbols": ["ChoiceOption$ebnf$1", (lexer.has("any") ? {type: "any"} : any)], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "ChoiceOption$ebnf$2", "symbols": ["OptionRest"], "postprocess": id},
     {"name": "ChoiceOption$ebnf$2", "symbols": [], "postprocess": function(d) {return null;}},
-    {"name": "ChoiceOption", "symbols": [(lexer.has("choiceOptionOpen") ? {type: "choiceOptionOpen"} : choiceOptionOpen), "ChoiceOption$ebnf$1", "ChoiceOption$ebnf$2", (lexer.has("choiceOptionClose") ? {type: "choiceOptionClose"} : choiceOptionClose)], "postprocess":  ([ , first, rest ]) => ({
-          kind: "ChoiceOption",
-          value: rest ? [ mergeValue(first), ...rest.value ] : mergeValue(first),
-          ordered: rest ? rest.kind === "OrderedOptionRest" : undefined
-        })},
+    {"name": "ChoiceOption", "symbols": [(lexer.has("choiceOptionOpen") ? {type: "choiceOptionOpen"} : choiceOptionOpen), "ChoiceOption$ebnf$1", "ChoiceOption$ebnf$2", (lexer.has("choiceOptionClose") ? {type: "choiceOptionClose"} : choiceOptionClose)], "postprocess":  ([ , first, rest, close ]) => {
+          const multiple = rest || close.value.startsWith(",");
+          return {
+            kind: "ChoiceOption",
+            value: multiple ? [ mergeValue(first), ...(rest?.value || []) ] : mergeValue(first),
+            ordered: multiple ? rest?.kind === "OrderedOptionRest" : undefined
+          };
+        }},
     {"name": "ButtonOption$ebnf$1", "symbols": [(lexer.has("any") ? {type: "any"} : any)]},
     {"name": "ButtonOption$ebnf$1", "symbols": ["ButtonOption$ebnf$1", (lexer.has("any") ? {type: "any"} : any)], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "ButtonOption$ebnf$2", "symbols": ["OptionRest"], "postprocess": id},
     {"name": "ButtonOption$ebnf$2", "symbols": [], "postprocess": function(d) {return null;}},
-    {"name": "ButtonOption", "symbols": [(lexer.has("buttonOptionOpen") ? {type: "buttonOptionOpen"} : buttonOptionOpen), "ButtonOption$ebnf$1", "ButtonOption$ebnf$2", (lexer.has("buttonOptionClose") ? {type: "buttonOptionClose"} : buttonOptionClose)], "postprocess":  ([ , first, rest ]) => ({
-          kind: "ButtonOption",
-          value: rest ? [ mergeValue(first), ...rest.value ] : mergeValue(first),
-          ordered: rest ? rest.kind === "OrderedOptionRest" : undefined
-        })},
+    {"name": "ButtonOption", "symbols": [(lexer.has("buttonOptionOpen") ? {type: "buttonOptionOpen"} : buttonOptionOpen), "ButtonOption$ebnf$1", "ButtonOption$ebnf$2", (lexer.has("buttonOptionClose") ? {type: "buttonOptionClose"} : buttonOptionClose)], "postprocess":  ([ , first, rest, close ]) => {
+          const multiple = rest || close.value.startsWith(",");
+          return {
+            kind: "ButtonOption",
+            value: multiple ? [ mergeValue(first), ...(rest?.value || []) ] : mergeValue(first),
+            ordered: multiple ? rest?.kind === "OrderedOptionRest" : undefined
+          };
+        }},
     {"name": "OptionRest$ebnf$1$subexpression$1$ebnf$1", "symbols": [(lexer.has("any") ? {type: "any"} : any)]},
     {"name": "OptionRest$ebnf$1$subexpression$1$ebnf$1", "symbols": ["OptionRest$ebnf$1$subexpression$1$ebnf$1", (lexer.has("any") ? {type: "any"} : any)], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "OptionRest$ebnf$1$subexpression$1", "symbols": [(lexer.has("orderedOptionSeparator") ? {type: "orderedOptionSeparator"} : orderedOptionSeparator), "OptionRest$ebnf$1$subexpression$1$ebnf$1"]},

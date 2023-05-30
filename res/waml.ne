@@ -90,8 +90,8 @@
     },
     option: {
       shortLingualOptionClose: { match: /}}/, pop: 1 },
-      buttonOptionClose: { match: /]}/, pop: 1 },
-      choiceOptionClose: { match: /}/, pop: 1 },
+      buttonOptionClose: { match: /,?]}/, pop: 1 },
+      choiceOptionClose: { match: /,?}/, pop: 1 },
       orderedOptionSeparator: /\s*->\s*/,
       unorderedOptionSeparator: /\s*,\s*/,
       any: /./,
@@ -241,16 +241,22 @@ Cell           -> (%cellOpen | %inlineCellOpen) Main %cellClose         {% ([ [ 
 InlineOption   -> ChoiceOption                                          {% id %}
                   | ButtonOption                                        {% id %}
                   | ShortLingualOption                                  {% id %}
-ChoiceOption   -> %choiceOptionOpen %any:+ OptionRest:? %choiceOptionClose {% ([ , first, rest ]) => ({
-                                                                          kind: "ChoiceOption",
-                                                                          value: rest ? [ mergeValue(first), ...rest.value ] : mergeValue(first),
-                                                                          ordered: rest ? rest.kind === "OrderedOptionRest" : undefined
-                                                                        })%}
-ButtonOption   -> %buttonOptionOpen %any:+ OptionRest:? %buttonOptionClose {% ([ , first, rest ]) => ({
-                                                                          kind: "ButtonOption",
-                                                                          value: rest ? [ mergeValue(first), ...rest.value ] : mergeValue(first),
-                                                                          ordered: rest ? rest.kind === "OrderedOptionRest" : undefined
-                                                                        })%}
+ChoiceOption   -> %choiceOptionOpen %any:+ OptionRest:? %choiceOptionClose {% ([ , first, rest, close ]) => {
+                                                                          const multiple = rest || close.value.startsWith(",");
+                                                                          return {
+                                                                            kind: "ChoiceOption",
+                                                                            value: multiple ? [ mergeValue(first), ...(rest?.value || []) ] : mergeValue(first),
+                                                                            ordered: multiple ? rest?.kind === "OrderedOptionRest" : undefined
+                                                                          };
+                                                                        }%}
+ButtonOption   -> %buttonOptionOpen %any:+ OptionRest:? %buttonOptionClose {% ([ , first, rest, close ]) => {
+                                                                          const multiple = rest || close.value.startsWith(",");
+                                                                          return {
+                                                                            kind: "ButtonOption",
+                                                                            value: multiple ? [ mergeValue(first), ...(rest?.value || []) ] : mergeValue(first),
+                                                                            ordered: multiple ? rest?.kind === "OrderedOptionRest" : undefined
+                                                                          };
+                                                                        }%}
 OptionRest     -> (%orderedOptionSeparator %any:+):+                    {% ([ list ]) => ({ kind: "OrderedOptionRest", value: list.map(v => mergeValue(v[1])) }) %}
                   | (%unorderedOptionSeparator %any:+):+                {% ([ list ]) => ({ kind: "UnorderedOptionRest", value: list.map(v => mergeValue(v[1])) }) %}
 ShortLingualOption -> %shortLingualOptionOpen %any:* %shortLingualOptionClose {% ([ , value ]) => ({ kind: "ShortLingualOption", value: mergeValue(value) }) %}

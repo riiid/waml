@@ -52,8 +52,8 @@ You can make a custom WAML viewer from the AST.
 - **`parseWAML`** converts a string to a WAML document.
   You should check syntax errors like `if('error' in document){ ... }`.
 - **`WAMLDocument`** provides several utility functions from a WAML document.
+  - **`metadata`** extracts the metadata of a WAML document. Currently the metadata contains just the document's answer.
   - **`sanitize`** extracts plain text from a WAML document.
-  - **`getMetadata`** extracts the metadata of a WAML document. Currently the metadata contains just the document's answer.
   - **`findReferences`** extracts external resources (e.g., image, passage) of a WAML document.
 - **`isMooToken`** checks whether the object is a primitive Moo token.
 - **`hasKind`** checks whether the object is a component token.

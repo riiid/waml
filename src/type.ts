@@ -1,4 +1,20 @@
+const choiceOptionGroupPatterns = {
+  NUMERIC: /^\d+$/,
+  LOWER_ALPHABETIC: /^[a-z]$/,
+  UPPER_ALPHABETIC: /^[A-Z]$/,
+  HANGEUL_CONSONANTAL: /^[ㄱ-ㅎ]$/,
+  HANGEUL_FULL: /^[가나다라마바사아자차카타파하]$/,
+  LOWER_ROMAN: /^(?!$)x{0,3}(i{1,3}|i[vx]|vi{0,3})?$/, // 39까지 지원
+  UPPER_ROMAN: /^(?!$)X{0,3}(I{1,3}|I[VX]|VI{0,3})?$/, // 39까지 지원
+};
+
 export namespace WAML {
+  export enum InteractionType{
+    CHOICE_OPTION,
+    BUTTON_OPTION,
+    SHORT_LINGUAL_OPTION
+  }
+
   export type Document = Array<Line | XMLElement | MooToken<"lineComment">>;
   export type ParserError = {
     error: true;
@@ -6,6 +22,9 @@ export namespace WAML {
     stack?: string[];
   };
   export type Metadata = {
+    answerFormat: {
+      interactions: Interaction[];
+    };
     answers: Answer[];
   };
   export type Answer = 
@@ -24,6 +43,25 @@ export namespace WAML {
         children: Exclude<Answer, { type: "COMBINED" }>[]
       }
   ;
+  export type Interaction = {
+    index: number;
+  }&(
+    | {
+      type: InteractionType.CHOICE_OPTION;
+      group: keyof typeof choiceOptionGroupPatterns;
+      values: string[];
+      multipleness?: "ordered"|"unordered";
+    }
+    | {
+      type: InteractionType.BUTTON_OPTION;
+      values: string[];
+      multipleness?: "ordered"|"unordered";
+    }
+    | {
+      type: InteractionType.SHORT_LINGUAL_OPTION;
+      placeholder: string;
+    }
+  );
 
   export enum LinePrefix {
     QUESTION = "#",
@@ -170,4 +208,10 @@ export function isMooToken<T extends WAML.MooTokenType>(
 }
 export function hasKind<T extends string>(value:object, kind:T):value is { kind: T }{
   return value && 'kind' in value && value.kind === kind;
+}
+export function guessChoiceOptionGroup(value:string){
+  for(const [ k, v ] of Object.entries(choiceOptionGroupPatterns)){
+    if(v.test(value)) return k as keyof typeof choiceOptionGroupPatterns;
+  }
+  return null;
 }
