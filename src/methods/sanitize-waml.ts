@@ -1,4 +1,5 @@
-import { hasKind, isMooToken, WAML } from "../type.js";
+import { hasKind, isMooToken } from "../check.js";
+import { WAML } from "../type.js";
 import { getCircledLetter } from "../utility.js";
 
 export type SanitizationOptions = {

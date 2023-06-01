@@ -1,18 +1,19 @@
-const choiceOptionGroupPatterns = {
-  NUMERIC: /^\d+$/,
-  LOWER_ALPHABETIC: /^[a-z]$/,
-  UPPER_ALPHABETIC: /^[A-Z]$/,
-  HANGEUL_CONSONANTAL: /^[ㄱ-ㅎ]$/,
-  HANGEUL_FULL: /^[가나다라마바사아자차카타파하]$/,
-  LOWER_ROMAN: /^(?!$)x{0,3}(i{1,3}|i[vx]|vi{0,3})?$/, // 39까지 지원
-  UPPER_ROMAN: /^(?!$)X{0,3}(I{1,3}|I[VX]|VI{0,3})?$/, // 39까지 지원
-};
+
 
 export namespace WAML {
   export enum InteractionType{
     CHOICE_OPTION,
     BUTTON_OPTION,
     SHORT_LINGUAL_OPTION
+  }
+  export enum ChoiceOptionGroup{
+    NUMERIC,
+    LOWER_ALPHABETIC,
+    UPPER_ALPHABETIC,
+    HANGEUL_CONSONANTAL,
+    HANGEUL_FULL,
+    LOWER_ROMAN,
+    UPPER_ROMAN
   }
 
   export type Document = Array<Line | XMLElement | MooToken<"lineComment">>;
@@ -48,7 +49,7 @@ export namespace WAML {
   }&(
     | {
       type: InteractionType.CHOICE_OPTION;
-      group: keyof typeof choiceOptionGroupPatterns;
+      group: ChoiceOptionGroup;
       values: string[];
       multipleness?: "ordered"|"unordered";
     }
@@ -198,20 +199,4 @@ export namespace WAML {
     ? T | (Omit<T, 'value' | 'ordered'> & { value: string[]; ordered: boolean })
     : T
   ;
-}
-
-export function isMooToken<T extends WAML.MooTokenType>(
-  value: object,
-  type: T
-): value is WAML.MooToken<T> {
-  return value && "type" in value && value.type === type && "line" in value && "col" in value;
-}
-export function hasKind<T extends string>(value:object, kind:T):value is { kind: T }{
-  return value && 'kind' in value && value.kind === kind;
-}
-export function guessChoiceOptionGroup(value:string){
-  for(const [ k, v ] of Object.entries(choiceOptionGroupPatterns)){
-    if(v.test(value)) return k as keyof typeof choiceOptionGroupPatterns;
-  }
-  return null;
 }

@@ -1,4 +1,4 @@
-import { hasKind, isMooToken } from "../type.js";
+import { hasKind, isMooToken } from "../check.js";
 import { getCircledLetter } from "../utility.js";
 export function sanitize(document, { showOptionLabels = false }) {
     return iterate(document).trim();

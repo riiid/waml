@@ -1,4 +1,5 @@
-import { hasKind, isMooToken, WAML } from "./type.js";
+import { WAML } from "./type.js";
+import { hasKind, isMooToken } from "./check.js";
 import Nearley from "nearley";
 import Grammar from "../res/waml.cjs";
 

@@ -1,4 +1,5 @@
-import { WAML, guessChoiceOptionGroup, hasKind } from "../type.js";
+import { WAML } from "../type.js";
+import { hasKind, guessChoiceOptionGroup } from "../check.js";
 const ambiguousLowerRomanValues = ["i", "v", "x"];
 const ambiguousUpperRomanValues = ["I", "V", "X"];
 export function findAnswers(document) {
@@ -25,6 +26,9 @@ export function findAnswers(document) {
                     if (typeof option.value === "string") {
                         return { type: "SINGLE", value: [option.value] };
                     }
+                    // NOTE `@answer {2,1}`이라 적었을 때 학생이 1 -> 2 순으로 답을 내는 경우에도 정답 처리하기 위함
+                    if (!option.ordered)
+                        option.value.sort();
                     return { type: "MULTIPLE", value: option.value, ordered: option.ordered };
             }
         }
@@ -84,10 +88,10 @@ export function getAnswerFormat(document, answer) {
     function handleChoiceOption(value) {
         let group;
         if (ambiguousLowerRomanValues.includes(value) && choiceOptionValues.includes("ii")) {
-            group = "LOWER_ROMAN";
+            group = WAML.ChoiceOptionGroup.LOWER_ROMAN;
         }
         else if (ambiguousUpperRomanValues.includes(value) && choiceOptionValues.includes("II")) {
-            group = "UPPER_ROMAN";
+            group = WAML.ChoiceOptionGroup.UPPER_ROMAN;
         }
         else {
             group = guessChoiceOptionGroup(value);

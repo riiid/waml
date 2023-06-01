@@ -1,4 +1,4 @@
-import { hasKind, isMooToken } from "./type.js";
+import { hasKind, isMooToken } from "./check.js";
 import Nearley from "nearley";
 import Grammar from "../res/waml.cjs";
 const grammar = Nearley.Grammar.fromCompiled(Grammar);

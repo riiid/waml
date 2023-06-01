@@ -1,17 +1,17 @@
-declare const choiceOptionGroupPatterns: {
-    NUMERIC: RegExp;
-    LOWER_ALPHABETIC: RegExp;
-    UPPER_ALPHABETIC: RegExp;
-    HANGEUL_CONSONANTAL: RegExp;
-    HANGEUL_FULL: RegExp;
-    LOWER_ROMAN: RegExp;
-    UPPER_ROMAN: RegExp;
-};
 export declare namespace WAML {
     export enum InteractionType {
         CHOICE_OPTION = 0,
         BUTTON_OPTION = 1,
         SHORT_LINGUAL_OPTION = 2
+    }
+    export enum ChoiceOptionGroup {
+        NUMERIC = 0,
+        LOWER_ALPHABETIC = 1,
+        UPPER_ALPHABETIC = 2,
+        HANGEUL_CONSONANTAL = 3,
+        HANGEUL_FULL = 4,
+        LOWER_ROMAN = 5,
+        UPPER_ROMAN = 6
     }
     export type Document = Array<Line | XMLElement | MooToken<"lineComment">>;
     export type ParserError = {
@@ -42,7 +42,7 @@ export declare namespace WAML {
         index: number;
     } & ({
         type: InteractionType.CHOICE_OPTION;
-        group: keyof typeof choiceOptionGroupPatterns;
+        group: ChoiceOptionGroup;
         values: string[];
         multipleness?: "ordered" | "unordered";
     } | {
@@ -168,9 +168,3 @@ export declare namespace WAML {
     }) : T;
     export {};
 }
-export declare function isMooToken<T extends WAML.MooTokenType>(value: object, type: T): value is WAML.MooToken<T>;
-export declare function hasKind<T extends string>(value: object, kind: T): value is {
-    kind: T;
-};
-export declare function guessChoiceOptionGroup(value: string): "NUMERIC" | "LOWER_ALPHABETIC" | "UPPER_ALPHABETIC" | "HANGEUL_CONSONANTAL" | "HANGEUL_FULL" | "LOWER_ROMAN" | "UPPER_ROMAN";
-export {};
