@@ -108,16 +108,10 @@ export function getAnswerFormat(document:WAML.Document, answer?:WAML.Answer):WAM
   }
 }
 function getFlattenAnswers(answer:WAML.Answer){
-  const R:Exclude<WAML.Answer, { type: "COMBINED" }>[] = [];
-
   if(answer.type === "COMBINED"){
-    for(const v of answer.children){
-      R.push(v);
-    }
-  }else{
-    R.push(answer);
+    return answer.children;
   }
-  return R;
+  return [ answer ];
 }
 function getChoiceOptionValues(document:WAML.Document):string[]{
   const R:string[] = [];

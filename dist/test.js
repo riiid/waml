@@ -11,18 +11,22 @@ const example = `
 {ㄱ} 1
 {ㄴ} 2
 {ㄷ} 3
+{{}}
 
-@answer {ㄱ,}
-@answer {{55}}
+@answer {ㄱ,}{{123,}}
 
 <explanation>
 > 해당 글에서 head는 '~로 향하다'라는 의미의 동사이다.
 </explanation>
 `;
 const document = new WAMLDocument(example);
-console.log(document.metadata.answerFormat.interactions);
 assert.deepEqual(document.metadata.answers, [
-    { type: "MULTIPLE", value: ["ㄱ"], ordered: false },
-    { type: "SINGLE", value: ["55"] }
+    {
+        type: "COMBINED",
+        children: [
+            { type: "MULTIPLE", value: ["ㄱ"], ordered: false },
+            { type: "SINGLE", value: ["123,"] }
+        ]
+    }
 ]);
 assert.equal(document.findReferences()[0].name, "passage");

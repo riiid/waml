@@ -16,8 +16,8 @@ function id(x) { return x[0]; }
     prefix: PREFIXES,
     longLingualOption: { match: /\{{3}.*?\}{3}/, value: chunk => chunk.slice(3, -3) },
     shortLingualOptionOpen: { match: /{{/, push: "option" },
-    buttonOptionOpen: { match: /{\[/, push: "option" },
-    choiceOptionOpen: { match: /{/, push: "option" },
+    buttonOptionOpen: { match: /{\[/, push: "objectiveOption" },
+    choiceOptionOpen: { match: /{/, push: "objectiveOption" },
 
     dAnswer: "@answer",
     dPassage: "@passage",
@@ -94,6 +94,10 @@ function id(x) { return x[0]; }
     },
     option: {
       shortLingualOptionClose: { match: /}}/, pop: 1 },
+      any: /./,
+      ...withoutXML
+    },
+    objectiveOption: {
       buttonOptionClose: { match: /,?]}/, pop: 1 },
       choiceOptionClose: { match: /,?}/, pop: 1 },
       orderedOptionSeparator: /\s*->\s*/,

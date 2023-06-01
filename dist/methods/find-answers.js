@@ -115,16 +115,10 @@ export function getAnswerFormat(document, answer) {
     }
 }
 function getFlattenAnswers(answer) {
-    const R = [];
     if (answer.type === "COMBINED") {
-        for (const v of answer.children) {
-            R.push(v);
-        }
+        return answer.children;
     }
-    else {
-        R.push(answer);
-    }
-    return R;
+    return [answer];
 }
 function getChoiceOptionValues(document) {
     var _a;

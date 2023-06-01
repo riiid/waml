@@ -12,8 +12,8 @@
     prefix: PREFIXES,
     longLingualOption: { match: /\{{3}.*?\}{3}/, value: chunk => chunk.slice(3, -3) },
     shortLingualOptionOpen: { match: /{{/, push: "option" },
-    buttonOptionOpen: { match: /{\[/, push: "option" },
-    choiceOptionOpen: { match: /{/, push: "option" },
+    buttonOptionOpen: { match: /{\[/, push: "objectiveOption" },
+    choiceOptionOpen: { match: /{/, push: "objectiveOption" },
 
     dAnswer: "@answer",
     dPassage: "@passage",
@@ -90,6 +90,10 @@
     },
     option: {
       shortLingualOptionClose: { match: /}}/, pop: 1 },
+      any: /./,
+      ...withoutXML
+    },
+    objectiveOption: {
       buttonOptionClose: { match: /,?]}/, pop: 1 },
       choiceOptionClose: { match: /,?}/, pop: 1 },
       orderedOptionSeparator: /\s*->\s*/,
