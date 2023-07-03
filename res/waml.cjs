@@ -101,7 +101,7 @@ function id(x) { return x[0]; }
       buttonOptionClose: { match: /,?]}/, pop: 1 },
       choiceOptionClose: { match: /,?}/, pop: 1 },
       orderedOptionSeparator: /\s*->\s*/,
-      unorderedOptionSeparator: /\s*,\s*/,
+      unorderedOptionSeparator: /\s*(?<!\\),\s*/,
       any: /./,
       ...withoutXML
     },
@@ -233,7 +233,7 @@ var grammar = {
     {"name": "ClassedBlock", "symbols": [(lexer.has("classOpen") ? {type: "classOpen"} : classOpen), "ClassedBlock$ebnf$1", (lexer.has("classClose") ? {type: "classClose"} : classClose)], "postprocess": ([ , name ]) => ({ kind: "ClassedBlock", name: mergeValue(name) })},
     {"name": "ClassedInline$ebnf$1", "symbols": [(lexer.has("identifiable") ? {type: "identifiable"} : identifiable)]},
     {"name": "ClassedInline$ebnf$1", "symbols": ["ClassedInline$ebnf$1", (lexer.has("identifiable") ? {type: "identifiable"} : identifiable)], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "ClassedInline$ebnf$2", "symbols": ["Inline"]},
+    {"name": "ClassedInline$ebnf$2", "symbols": []},
     {"name": "ClassedInline$ebnf$2", "symbols": ["ClassedInline$ebnf$2", "Inline"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "ClassedInline", "symbols": [(lexer.has("classOpen") ? {type: "classOpen"} : classOpen), "ClassedInline$ebnf$1", {"literal":":"}, "ClassedInline$ebnf$2", (lexer.has("classClose") ? {type: "classClose"} : classClose)], "postprocess": ([ , name,, inlines ]) => ({ kind: "ClassedInline", name: mergeValue(name), inlines: trimArray(inlines) })},
     {"name": "XMLElement$macrocall$2", "symbols": [(lexer.has("xStyleOpen") ? {type: "xStyleOpen"} : xStyleOpen)]},
