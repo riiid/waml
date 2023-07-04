@@ -2,6 +2,11 @@
   const moo = require("moo");
   const PREFIXES = [ "#", ">" ];
 
+  const textual = {
+    prefix: PREFIXES,
+    identifiable: /[\w가-힣-]/,
+    character: /./
+  };
   const withoutXML = {
     escaping: { match: /\\./, value: chunk => chunk[1] },
     lineComment: /^\/\/[^\n]+/,
@@ -9,7 +14,7 @@
     blockMathOpen: { match: "$$", push: "blockMath" },
     inlineMathOpen: { match: "$", push: "inlineMath" },
 
-    prefix: PREFIXES,
+    prefix: textual.prefix,
     longLingualOption: { match: /\{{3}.*?\}{3}/, value: chunk => chunk.slice(3, -3) },
     shortLingualOptionOpen: { match: /{{/, push: "option" },
     buttonOptionOpen: { match: /{\[/, push: "objectiveOption" },
@@ -33,8 +38,8 @@
     },
     lineBreak: { match: /\r?\n/, lineBreaks: true },
     spaces: /[ \t]+/,
-    identifiable: /[\w가-힣-]/,
-    character: /./
+    identifiable: textual.identifiable,
+    character: textual.character
   };
   const main = {
     xStyleOpen: { match: /<style>\s*/, push: "xStyle", value: () => "style" },
@@ -89,17 +94,17 @@
       ...omit(main, 'classClose')
     },
     option: {
+      escaping: withoutXML.escaping,
       shortLingualOptionClose: { match: /}}/, pop: 1 },
-      any: /./,
-      ...withoutXML
+      ...textual
     },
     objectiveOption: {
+      escaping: withoutXML.escaping,
       buttonOptionClose: { match: /,?]}/, pop: 1 },
       choiceOptionClose: { match: /,?}/, pop: 1 },
       orderedOptionSeparator: /\s*->\s*/,
       unorderedOptionSeparator: /\s*(?<!\\),\s*/,
-      any: /./,
-      ...withoutXML
+      ...textual
     },
     blockMath: {
       blockMathClose: { match: "$$", pop: 1 },
@@ -245,22 +250,22 @@ Cell           -> (%cellOpen | %inlineCellOpen) Main %cellClose         {% ([ [ 
 InlineOption   -> ChoiceOption                                          {% id %}
                   | ButtonOption                                        {% id %}
                   | ShortLingualOption                                  {% id %}
-ChoiceOption   -> %choiceOptionOpen %any:+ OptionRest:? %choiceOptionClose {% ([ , first, rest, close ]) => {
+ChoiceOption   -> %choiceOptionOpen Text:+ OptionRest:? %choiceOptionClose {% ([ , first, rest, close ]) => {
                                                                           const multiple = rest || close.value.startsWith(",");
                                                                           return {
                                                                             kind: "ChoiceOption",
-                                                                            value: multiple ? [ mergeValue(first), ...(rest?.value || []) ] : mergeValue(first),
+                                                                            value: multiple ? [ first.join(''), ...(rest?.value || []) ] : first.join(''),
                                                                             ordered: multiple ? rest?.kind === "OrderedOptionRest" : undefined
                                                                           };
                                                                         }%}
-ButtonOption   -> %buttonOptionOpen %any:+ OptionRest:? %buttonOptionClose {% ([ , first, rest, close ]) => {
+ButtonOption   -> %buttonOptionOpen Text:+ OptionRest:? %buttonOptionClose {% ([ , first, rest, close ]) => {
                                                                           const multiple = rest || close.value.startsWith(",");
                                                                           return {
                                                                             kind: "ButtonOption",
-                                                                            value: multiple ? [ mergeValue(first), ...(rest?.value || []) ] : mergeValue(first),
+                                                                            value: multiple ? [ first.join(''), ...(rest?.value || []) ] : first.join(''),
                                                                             ordered: multiple ? rest?.kind === "OrderedOptionRest" : undefined
                                                                           };
                                                                         }%}
-OptionRest     -> (%orderedOptionSeparator %any:+):+                    {% ([ list ]) => ({ kind: "OrderedOptionRest", value: list.map(v => mergeValue(v[1])) }) %}
-                  | (%unorderedOptionSeparator %any:+):+                {% ([ list ]) => ({ kind: "UnorderedOptionRest", value: list.map(v => mergeValue(v[1])) }) %}
-ShortLingualOption -> %shortLingualOptionOpen %any:* %shortLingualOptionClose {% ([ , value ]) => ({ kind: "ShortLingualOption", value: mergeValue(value) }) %}
+OptionRest     -> (%orderedOptionSeparator Text:+):+                    {% ([ list ]) => ({ kind: "OrderedOptionRest", value: list.map(v => v[1].join('')) }) %}
+                  | (%unorderedOptionSeparator Text:+):+                {% ([ list ]) => ({ kind: "UnorderedOptionRest", value: list.map(v => v[1].join('')) }) %}
+ShortLingualOption -> %shortLingualOptionOpen Text:* %shortLingualOptionClose {% ([ , value ]) => ({ kind: "ShortLingualOption", value: value.join('') }) %}
