@@ -198,7 +198,10 @@ var grammar = {
     {"name": "LineComponent$ebnf$2", "symbols": ["LineComponent$ebnf$2", "Inline"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "LineComponent", "symbols": ["LineComponent$ebnf$2"], "postprocess":  ([ inlines ], _, reject) => {
           if(PREFIXES.includes(inlines[0])) return reject;
-          if(inlines[0]?.kind === "ChoiceOption"){
+          const promotable = inlines[0]?.kind === "ChoiceOption"
+            || (inlines[0]?.kind === "ShortLingualOption" && inlines.length === 1)
+          ;
+          if(promotable){
             return { kind: "LineComponent", headOption: inlines[0], inlines: trimArray(inlines.slice(1)) };
           }
           return { kind: "LineComponent", inlines };

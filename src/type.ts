@@ -81,7 +81,7 @@ export namespace WAML {
     | Footnote
     | {
         kind: "LineComponent";
-        headOption?: ChoiceOption;
+        headOption?: ChoiceOption | ShortLingualOption;
         inlines: Inline[];
       }
     | LineXMLElement

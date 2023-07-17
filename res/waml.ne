@@ -184,7 +184,10 @@ LineComponent  -> BlockMath                                             {% id %}
                   | %footnote Inline:+                                  {% ([ , inlines ]) => ({ kind: "Footnote", inlines: trimArray(inlines) }) %}
                   | Inline:+                                            {% ([ inlines ], _, reject) => {
                                                                           if(PREFIXES.includes(inlines[0])) return reject;
-                                                                          if(inlines[0]?.kind === "ChoiceOption"){
+                                                                          const promotable = inlines[0]?.kind === "ChoiceOption"
+                                                                            || (inlines[0]?.kind === "ShortLingualOption" && inlines.length === 1)
+                                                                          ;
+                                                                          if(promotable){
                                                                             return { kind: "LineComponent", headOption: inlines[0], inlines: trimArray(inlines.slice(1)) };
                                                                           }
                                                                           return { kind: "LineComponent", inlines };

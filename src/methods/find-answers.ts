@@ -44,8 +44,16 @@ export function getAnswerFormat(document:WAML.Document, answer?:WAML.Answer):WAM
   for(const v of document){
     if(typeof v === "string" || !hasKind(v, "Line")) continue;
     if(hasKind(v.component, "LineComponent")){
-      if(v.component.headOption?.kind === "ChoiceOption"){
-        handleChoiceOption(v.component.headOption.value);
+      switch(v.component.headOption?.kind){
+        case undefined: break;
+        case "ChoiceOption":
+          handleChoiceOption(v.component.headOption.value);
+          break;
+        case "ShortLingualOption":
+          iterate([ v.component.headOption ]);
+          break;
+        default:
+          throw Error(`Unhandled headOption: ${(v.component.headOption as any)['kind']}`);
       }
       iterate(v.component.inlines);
     }

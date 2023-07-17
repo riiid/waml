@@ -45,8 +45,16 @@ export function getAnswerFormat(document, answer) {
         if (typeof v === "string" || !hasKind(v, "Line"))
             continue;
         if (hasKind(v.component, "LineComponent")) {
-            if (((_a = v.component.headOption) === null || _a === void 0 ? void 0 : _a.kind) === "ChoiceOption") {
-                handleChoiceOption(v.component.headOption.value);
+            switch ((_a = v.component.headOption) === null || _a === void 0 ? void 0 : _a.kind) {
+                case undefined: break;
+                case "ChoiceOption":
+                    handleChoiceOption(v.component.headOption.value);
+                    break;
+                case "ShortLingualOption":
+                    iterate([v.component.headOption]);
+                    break;
+                default:
+                    throw Error(`Unhandled headOption: ${v.component.headOption['kind']}`);
             }
             iterate(v.component.inlines);
         }

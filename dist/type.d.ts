@@ -64,7 +64,7 @@ export declare namespace WAML {
     };
     export type LineComponent = Math<false> | Directive | ClassedBlock | MooToken<"longLingualOption"> | Footnote | {
         kind: "LineComponent";
-        headOption?: ChoiceOption;
+        headOption?: ChoiceOption | ShortLingualOption;
         inlines: Inline[];
     } | LineXMLElement | null;
     export type Inline = InlineOption | MooToken<"medium"> | Math<true> | StyledInline | ClassedInline | string;
