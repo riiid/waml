@@ -96,6 +96,7 @@
     option: {
       escaping: withoutXML.escaping,
       shortLingualOptionClose: { match: /}}/, pop: 1 },
+      shortLingualDefaultValue: { match: "=" },
       ...textual
     },
     objectiveOption: {
@@ -271,4 +272,8 @@ ButtonOption   -> %buttonOptionOpen Text:+ OptionRest:? %buttonOptionClose {% ([
                                                                         }%}
 OptionRest     -> (%orderedOptionSeparator Text:+):+                    {% ([ list ]) => ({ kind: "OrderedOptionRest", value: list.map(v => v[1].join('')) }) %}
                   | (%unorderedOptionSeparator Text:+):+                {% ([ list ]) => ({ kind: "UnorderedOptionRest", value: list.map(v => v[1].join('')) }) %}
-ShortLingualOption -> %shortLingualOptionOpen Text:* %shortLingualOptionClose {% ([ , value ]) => ({ kind: "ShortLingualOption", value: value.join('') }) %}
+ShortLingualOption -> %shortLingualOptionOpen %shortLingualDefaultValue:? Text:* %shortLingualOptionClose {% ([ , defaultValue, value ]) => ({
+                                                                          kind: "ShortLingualOption",
+                                                                          value: value.join(''),
+                                                                          defaultValue: Boolean(defaultValue)
+                                                                        })%}

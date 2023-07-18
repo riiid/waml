@@ -75,6 +75,7 @@ export declare namespace WAML {
     export type ShortLingualOption = {
         kind: "ShortLingualOption";
         value: string;
+        defaultValue: boolean;
     };
     export type StyledInline = {
         kind: "StyledInline";

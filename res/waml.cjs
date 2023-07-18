@@ -100,6 +100,7 @@ function id(x) { return x[0]; }
     option: {
       escaping: withoutXML.escaping,
       shortLingualOptionClose: { match: /}}/, pop: 1 },
+      shortLingualDefaultValue: { match: "=" },
       ...textual
     },
     objectiveOption: {
@@ -364,9 +365,15 @@ var grammar = {
     {"name": "OptionRest$ebnf$2$subexpression$2", "symbols": [(lexer.has("unorderedOptionSeparator") ? {type: "unorderedOptionSeparator"} : unorderedOptionSeparator), "OptionRest$ebnf$2$subexpression$2$ebnf$1"]},
     {"name": "OptionRest$ebnf$2", "symbols": ["OptionRest$ebnf$2", "OptionRest$ebnf$2$subexpression$2"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "OptionRest", "symbols": ["OptionRest$ebnf$2"], "postprocess": ([ list ]) => ({ kind: "UnorderedOptionRest", value: list.map(v => v[1].join('')) })},
-    {"name": "ShortLingualOption$ebnf$1", "symbols": []},
-    {"name": "ShortLingualOption$ebnf$1", "symbols": ["ShortLingualOption$ebnf$1", "Text"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "ShortLingualOption", "symbols": [(lexer.has("shortLingualOptionOpen") ? {type: "shortLingualOptionOpen"} : shortLingualOptionOpen), "ShortLingualOption$ebnf$1", (lexer.has("shortLingualOptionClose") ? {type: "shortLingualOptionClose"} : shortLingualOptionClose)], "postprocess": ([ , value ]) => ({ kind: "ShortLingualOption", value: value.join('') })}
+    {"name": "ShortLingualOption$ebnf$1", "symbols": [(lexer.has("shortLingualDefaultValue") ? {type: "shortLingualDefaultValue"} : shortLingualDefaultValue)], "postprocess": id},
+    {"name": "ShortLingualOption$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
+    {"name": "ShortLingualOption$ebnf$2", "symbols": []},
+    {"name": "ShortLingualOption$ebnf$2", "symbols": ["ShortLingualOption$ebnf$2", "Text"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "ShortLingualOption", "symbols": [(lexer.has("shortLingualOptionOpen") ? {type: "shortLingualOptionOpen"} : shortLingualOptionOpen), "ShortLingualOption$ebnf$1", "ShortLingualOption$ebnf$2", (lexer.has("shortLingualOptionClose") ? {type: "shortLingualOptionClose"} : shortLingualOptionClose)], "postprocess":  ([ , defaultValue, value ]) => ({
+          kind: "ShortLingualOption",
+          value: value.join(''),
+          defaultValue: Boolean(defaultValue)
+        })}
 ]
   , ParserStart: "Main"
 }
