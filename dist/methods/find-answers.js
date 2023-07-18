@@ -1,5 +1,5 @@
 import { WAML } from "../type.js";
-import { hasKind, guessChoiceOptionGroup } from "../check.js";
+import { hasKind, guessChoiceOptionGroup, isMooToken } from "../check.js";
 const ambiguousLowerRomanValues = ["i", "v", "x"];
 const ambiguousUpperRomanValues = ["I", "V", "X"];
 export function findAnswers(document) {
@@ -41,6 +41,7 @@ export function getAnswerFormat(document, answer) {
     const choiceOptionValues = getChoiceOptionValues(document);
     const interactions = [];
     const existingChoiceOptionGroup = {};
+    const existingButtonOptionGroup = {};
     for (const v of document) {
         if (typeof v === "string" || !hasKind(v, "Line"))
             continue;
@@ -64,6 +65,10 @@ export function getAnswerFormat(document, answer) {
         for (const v of inlines) {
             if (typeof v === "string")
                 continue;
+            if (isMooToken(v, "buttonBlank")) {
+                handleButtonOption("");
+                continue;
+            }
             if (hasKind(v, "StyledInline") || hasKind(v, "ClassedInline")) {
                 iterate(v.inlines);
             }
@@ -71,18 +76,7 @@ export function getAnswerFormat(document, answer) {
                 handleChoiceOption(v.value);
             }
             else if (hasKind(v, "ButtonOption")) {
-                const existing = interactions.find(w => w.type === WAML.InteractionType.BUTTON_OPTION);
-                if (existing) {
-                    existing.values.push(v.value);
-                }
-                else {
-                    interactions.push({
-                        index: interactions.length,
-                        type: WAML.InteractionType.BUTTON_OPTION,
-                        values: [v.value],
-                        multipleness: getMultipleness(interactions.length)
-                    });
-                }
+                handleButtonOption(v.value);
             }
             else if (hasKind(v, "ShortLingualOption")) {
                 interactions.push({
@@ -111,6 +105,22 @@ export function getAnswerFormat(document, answer) {
             interactions.push(existingChoiceOptionGroup[group] = {
                 index: interactions.length,
                 type: WAML.InteractionType.CHOICE_OPTION,
+                group,
+                values: [value],
+                multipleness: getMultipleness(interactions.length)
+            });
+        }
+    }
+    function handleButtonOption(value) {
+        // TODO 추후 그룹 이름 지정이 들어가야 할 수도...
+        const group = "default";
+        if (existingButtonOptionGroup[group]) {
+            existingButtonOptionGroup[group].values.push(value);
+        }
+        else {
+            interactions.push(existingButtonOptionGroup[group] = {
+                index: interactions.length,
+                type: WAML.InteractionType.BUTTON_OPTION,
                 group,
                 values: [value],
                 multipleness: getMultipleness(interactions.length)

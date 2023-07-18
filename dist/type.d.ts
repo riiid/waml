@@ -47,6 +47,7 @@ export declare namespace WAML {
         multipleness?: "ordered" | "unordered";
     } | {
         type: InteractionType.BUTTON_OPTION;
+        group: string;
         values: string[];
         multipleness?: "ordered" | "unordered";
     } | {
@@ -157,6 +158,7 @@ export declare namespace WAML {
             url: string;
         };
         rowSeparator: "===";
+        buttonBlank: string;
     };
     type ObjectiveOption<T extends string> = {
         kind: T;

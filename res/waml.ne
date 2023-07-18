@@ -17,6 +17,7 @@
     prefix: textual.prefix,
     longLingualOption: { match: /\{{3}.*?\}{3}/, value: chunk => chunk.slice(3, -3) },
     shortLingualOptionOpen: { match: /{{/, push: "option" },
+    buttonBlank: { match: /{\[_{3,}\]}/, value: "default" },
     buttonOptionOpen: { match: /{\[/, push: "objectiveOption" },
     choiceOptionOpen: { match: /{/, push: "objectiveOption" },
 
@@ -197,6 +198,7 @@ LineComponent  -> BlockMath                                             {% id %}
 Directive      -> %dAnswer %spaces InlineOption:+                       {% ([ ,, options ]) => ({ kind: "Directive", name: "answer", options }) %}
                   | %dPassage %spaces Text:+                            {% ([ ,, path ]) => ({ kind: "Directive", name: "passage", path: path.join('') }) %}
 Inline         -> InlineOption                                          {% id %}
+                  | %buttonBlank                                        {% id %}
                   | %medium                                             {% id %}
                   | %spaces                                             {% ([ token ]) => token.value %}
                   | InlineMath                                          {% id %}

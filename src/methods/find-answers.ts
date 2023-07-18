@@ -1,5 +1,7 @@
 import { WAML } from "../type.js";
-import { hasKind, guessChoiceOptionGroup } from "../check.js";
+import { hasKind, guessChoiceOptionGroup, isMooToken } from "../check.js";
+
+type TypedInteraction<T extends WAML.InteractionType> = WAML.Interaction&{ type: T };
 
 const ambiguousLowerRomanValues = [ "i", "v", "x" ];
 const ambiguousUpperRomanValues = [ "I", "V", "X" ];
@@ -39,7 +41,9 @@ export function getAnswerFormat(document:WAML.Document, answer?:WAML.Answer):WAM
   const flattenAnswers = answer ? getFlattenAnswers(answer) : [];
   const choiceOptionValues = getChoiceOptionValues(document);
   const interactions:WAML.Interaction[] = [];
-  const existingChoiceOptionGroup:Record<string, WAML.Interaction&{ type: WAML.InteractionType.CHOICE_OPTION }> = {};
+
+  const existingChoiceOptionGroup:Record<string, TypedInteraction<WAML.InteractionType.CHOICE_OPTION>> = {};
+  const existingButtonOptionGroup:Record<string, TypedInteraction<WAML.InteractionType.BUTTON_OPTION>> = {};
 
   for(const v of document){
     if(typeof v === "string" || !hasKind(v, "Line")) continue;
@@ -63,23 +67,16 @@ export function getAnswerFormat(document:WAML.Document, answer?:WAML.Answer):WAM
   function iterate(inlines:WAML.Inline[]):void{
     for(const v of inlines){
       if(typeof v === "string") continue;
+      if(isMooToken(v, "buttonBlank")){
+        handleButtonOption("");
+        continue;
+      }
       if(hasKind(v, "StyledInline") || hasKind(v, "ClassedInline")){
         iterate(v.inlines);
       }else if(hasKind(v, "ChoiceOption")){
         handleChoiceOption(v.value);
       }else if(hasKind(v, "ButtonOption")){
-        const existing = interactions.find(w => w.type === WAML.InteractionType.BUTTON_OPTION) as WAML.Interaction&{ type: WAML.InteractionType.BUTTON_OPTION };
-
-        if(existing){
-          existing.values.push(v.value);
-        }else{
-          interactions.push({
-            index: interactions.length,
-            type: WAML.InteractionType.BUTTON_OPTION,
-            values: [ v.value ],
-            multipleness: getMultipleness(interactions.length)
-          });
-        }
+        handleButtonOption(v.value);
       }else if(hasKind(v, "ShortLingualOption")){
         interactions.push({
           index: interactions.length,
@@ -105,6 +102,22 @@ export function getAnswerFormat(document:WAML.Document, answer?:WAML.Answer):WAM
       interactions.push(existingChoiceOptionGroup[group] = {
         index: interactions.length,
         type: WAML.InteractionType.CHOICE_OPTION,
+        group,
+        values: [ value ],
+        multipleness: getMultipleness(interactions.length)
+      });
+    }
+  }
+  function handleButtonOption(value:string):void{
+    // TODO 추후 그룹 이름 지정이 들어가야 할 수도...
+    const group = "default";
+
+    if(existingButtonOptionGroup[group]){
+      existingButtonOptionGroup[group].values.push(value);
+    }else{
+      interactions.push(existingButtonOptionGroup[group] = {
+        index: interactions.length,
+        type: WAML.InteractionType.BUTTON_OPTION,
         group,
         values: [ value ],
         multipleness: getMultipleness(interactions.length)

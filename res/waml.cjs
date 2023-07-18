@@ -21,6 +21,7 @@ function id(x) { return x[0]; }
     prefix: textual.prefix,
     longLingualOption: { match: /\{{3}.*?\}{3}/, value: chunk => chunk.slice(3, -3) },
     shortLingualOptionOpen: { match: /{{/, push: "option" },
+    buttonBlank: { match: /{\[_{3,}\]}/, value: "default" },
     buttonOptionOpen: { match: /{\[/, push: "objectiveOption" },
     choiceOptionOpen: { match: /{/, push: "objectiveOption" },
 
@@ -215,6 +216,7 @@ var grammar = {
     {"name": "Directive$ebnf$2", "symbols": ["Directive$ebnf$2", "Text"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "Directive", "symbols": [(lexer.has("dPassage") ? {type: "dPassage"} : dPassage), (lexer.has("spaces") ? {type: "spaces"} : spaces), "Directive$ebnf$2"], "postprocess": ([ ,, path ]) => ({ kind: "Directive", name: "passage", path: path.join('') })},
     {"name": "Inline", "symbols": ["InlineOption"], "postprocess": id},
+    {"name": "Inline", "symbols": [(lexer.has("buttonBlank") ? {type: "buttonBlank"} : buttonBlank)], "postprocess": id},
     {"name": "Inline", "symbols": [(lexer.has("medium") ? {type: "medium"} : medium)], "postprocess": id},
     {"name": "Inline", "symbols": [(lexer.has("spaces") ? {type: "spaces"} : spaces)], "postprocess": ([ token ]) => token.value},
     {"name": "Inline", "symbols": ["InlineMath"], "postprocess": id},
