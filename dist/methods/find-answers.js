@@ -116,16 +116,15 @@ export function getAnswerFormat(document, answer) {
         const group = "default";
         if (existingButtonOptionGroup[group]) {
             existingButtonOptionGroup[group].values.push(value);
+            return;
         }
-        else {
-            interactions.push(existingButtonOptionGroup[group] = {
-                index: interactions.length,
-                type: WAML.InteractionType.BUTTON_OPTION,
-                group,
-                values: [value],
-                multipleness: getMultipleness(interactions.length)
-            });
-        }
+        interactions.push(existingButtonOptionGroup[group] = {
+            index: interactions.length,
+            type: WAML.InteractionType.BUTTON_OPTION,
+            group,
+            values: [value],
+            multipleness: getMultipleness(interactions.length)
+        });
     }
     function getMultipleness(index) {
         const chunk = flattenAnswers[index];

@@ -97,7 +97,9 @@ export namespace WAML {
   export type Options = AnswerFormOf<InlineOption>[];
   export type InlineOption = ChoiceOption | ButtonOption | ShortLingualOption;
   export type ChoiceOption = ObjectiveOption<"ChoiceOption">;
-  export type ButtonOption = ObjectiveOption<"ButtonOption">;
+  export type ButtonOption = ObjectiveOption<"ButtonOption"> & {
+    id: number;
+  };
   export type ShortLingualOption = {
     kind: "ShortLingualOption";
     value: string;

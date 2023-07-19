@@ -134,6 +134,8 @@
     }
   });
 
+  let buttonOptionCounter = 0;
+
   function trimArray(array){
     while(array.length){
       if(typeof array[0] !== "string" || array[0].trim()){
@@ -268,6 +270,7 @@ ButtonOption   -> %buttonOptionOpen Text:+ OptionRest:? %buttonOptionClose {% ([
                                                                           const multiple = rest || close.value.startsWith(",");
                                                                           return {
                                                                             kind: "ButtonOption",
+                                                                            id: ++buttonOptionCounter,
                                                                             value: multiple ? [ first.join(''), ...(rest?.value || []) ] : first.join(''),
                                                                             ordered: multiple ? rest?.kind === "OrderedOptionRest" : undefined
                                                                           };

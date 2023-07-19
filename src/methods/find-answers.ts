@@ -114,15 +114,15 @@ export function getAnswerFormat(document:WAML.Document, answer?:WAML.Answer):WAM
 
     if(existingButtonOptionGroup[group]){
       existingButtonOptionGroup[group].values.push(value);
-    }else{
-      interactions.push(existingButtonOptionGroup[group] = {
-        index: interactions.length,
-        type: WAML.InteractionType.BUTTON_OPTION,
-        group,
-        values: [ value ],
-        multipleness: getMultipleness(interactions.length)
-      });
+      return;
     }
+    interactions.push(existingButtonOptionGroup[group] = {
+      index: interactions.length,
+      type: WAML.InteractionType.BUTTON_OPTION,
+      group,
+      values: [ value ],
+      multipleness: getMultipleness(interactions.length)
+    });
   }
   function getMultipleness(index:number){
     const chunk = flattenAnswers[index];
