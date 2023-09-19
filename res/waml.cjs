@@ -4,10 +4,11 @@
 function id(x) { return x[0]; }
 
   const moo = require("moo");
-  const PREFIXES = [ "#", ">" ];
+  const PREFIXES = [ "#", ">", "|" ];
+  const FIGURE_ADDONS = [ "##", "))" ];
 
   const textual = {
-    prefix: PREFIXES,
+    prefix: /[#>|](?=\s|$)/,
     identifiable: /[\w가-힣-]/,
     character: /./
   };
@@ -32,6 +33,8 @@ function id(x) { return x[0]; }
     sBoldOpen: { match: /\*\*/, push: "sBold" },
     footnote: "*)",
     sItalicOpen: { match: /(?<!\\)\*/, push: "sItalic" },
+    title: "##",
+    caption: "))",
 
     medium: {
       match: /!\[.+?\]\(.+?\)/,
@@ -194,6 +197,7 @@ var grammar = {
     {"name": "LineComponent", "symbols": ["BlockMath"], "postprocess": id},
     {"name": "LineComponent", "symbols": ["Directive"], "postprocess": id},
     {"name": "LineComponent", "symbols": ["ClassedBlock"], "postprocess": id},
+    {"name": "LineComponent", "symbols": ["FigureAddon"], "postprocess": id},
     {"name": "LineComponent", "symbols": [(lexer.has("longLingualOption") ? {type: "longLingualOption"} : longLingualOption)], "postprocess": id},
     {"name": "LineComponent$ebnf$1", "symbols": ["Inline"]},
     {"name": "LineComponent$ebnf$1", "symbols": ["LineComponent$ebnf$1", "Inline"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
@@ -202,6 +206,8 @@ var grammar = {
     {"name": "LineComponent$ebnf$2", "symbols": ["LineComponent$ebnf$2", "Inline"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "LineComponent", "symbols": ["LineComponent$ebnf$2"], "postprocess":  ([ inlines ], _, reject) => {
           if(PREFIXES.includes(inlines[0])) return reject;
+          if(FIGURE_ADDONS.includes(inlines[0])) return reject;
+        
           const promotable = inlines[0]?.kind === "ChoiceOption"
             || (inlines[0]?.kind === "ShortLingualOption" && inlines.length === 1)
           ;
@@ -211,6 +217,11 @@ var grammar = {
           return { kind: "LineComponent", inlines };
         }},
     {"name": "LineComponent", "symbols": ["LineXMLElement"], "postprocess": id},
+    {"name": "FigureAddon$subexpression$1", "symbols": [(lexer.has("title") ? {type: "title"} : title)]},
+    {"name": "FigureAddon$subexpression$1", "symbols": [(lexer.has("caption") ? {type: "caption"} : caption)]},
+    {"name": "FigureAddon$ebnf$1", "symbols": ["Inline"]},
+    {"name": "FigureAddon$ebnf$1", "symbols": ["FigureAddon$ebnf$1", "Inline"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "FigureAddon", "symbols": ["FigureAddon$subexpression$1", (lexer.has("spaces") ? {type: "spaces"} : spaces), "FigureAddon$ebnf$1"], "postprocess": ([ [{ type }],, inlines ]) => ({ kind: "FigureAddon", type, inlines: trimArray(inlines) })},
     {"name": "Directive$ebnf$1", "symbols": ["InlineOption"]},
     {"name": "Directive$ebnf$1", "symbols": ["Directive$ebnf$1", "InlineOption"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "Directive", "symbols": [(lexer.has("dAnswer") ? {type: "dAnswer"} : dAnswer), (lexer.has("spaces") ? {type: "spaces"} : spaces), "Directive$ebnf$1"], "postprocess": ([ ,, options ]) => ({ kind: "Directive", name: "answer", options })},
@@ -226,6 +237,8 @@ var grammar = {
     {"name": "Inline", "symbols": ["StyledInline"], "postprocess": id},
     {"name": "Inline", "symbols": ["ClassedInline"], "postprocess": id},
     {"name": "Text", "symbols": [(lexer.has("identifiable") ? {type: "identifiable"} : identifiable)], "postprocess": ([ token ]) => token.value},
+    {"name": "Text", "symbols": [(lexer.has("title") ? {type: "title"} : title)], "postprocess": ([ token ]) => token.value},
+    {"name": "Text", "symbols": [(lexer.has("caption") ? {type: "caption"} : caption)], "postprocess": ([ token ]) => token.value},
     {"name": "Text", "symbols": [(lexer.has("prefix") ? {type: "prefix"} : prefix)], "postprocess": ([ token ]) => token.value},
     {"name": "Text", "symbols": [(lexer.has("character") ? {type: "character"} : character)], "postprocess": ([ token ]) => token.value},
     {"name": "Text", "symbols": [(lexer.has("escaping") ? {type: "escaping"} : escaping)], "postprocess": ([ token ]) => token.value},

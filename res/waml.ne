@@ -1,9 +1,10 @@
 @{%
   const moo = require("moo");
-  const PREFIXES = [ "#", ">" ];
+  const PREFIXES = [ "#", ">", "|" ];
+  const FIGURE_ADDONS = [ "##", "))" ];
 
   const textual = {
-    prefix: PREFIXES,
+    prefix: /[#>|](?=\s|$)/,
     identifiable: /[\w가-힣-]/,
     character: /./
   };
@@ -28,6 +29,8 @@
     sBoldOpen: { match: /\*\*/, push: "sBold" },
     footnote: "*)",
     sItalicOpen: { match: /(?<!\\)\*/, push: "sItalic" },
+    title: "##",
+    caption: "))",
 
     medium: {
       match: /!\[.+?\]\(.+?\)/,
@@ -184,10 +187,13 @@ Line           -> (%prefix %spaces):* LineComponent:?                   {% ([ pr
 LineComponent  -> BlockMath                                             {% id %}
                   | Directive                                           {% id %}
                   | ClassedBlock                                        {% id %}
+                  | FigureAddon                                         {% id %}
                   | %longLingualOption                                  {% id %}
                   | %footnote Inline:+                                  {% ([ , inlines ]) => ({ kind: "Footnote", inlines: trimArray(inlines) }) %}
                   | Inline:+                                            {% ([ inlines ], _, reject) => {
                                                                           if(PREFIXES.includes(inlines[0])) return reject;
+                                                                          if(FIGURE_ADDONS.includes(inlines[0])) return reject;
+
                                                                           const promotable = inlines[0]?.kind === "ChoiceOption"
                                                                             || (inlines[0]?.kind === "ShortLingualOption" && inlines.length === 1)
                                                                           ;
@@ -197,6 +203,7 @@ LineComponent  -> BlockMath                                             {% id %}
                                                                           return { kind: "LineComponent", inlines };
                                                                         }%}
                   | LineXMLElement                                      {% id %}
+FigureAddon    -> (%title | %caption) %spaces Inline:+                  {% ([ [{ type }],, inlines ]) => ({ kind: "FigureAddon", type, inlines: trimArray(inlines) }) %}
 Directive      -> %dAnswer %spaces InlineOption:+                       {% ([ ,, options ]) => ({ kind: "Directive", name: "answer", options }) %}
                   | %dPassage %spaces Text:+                            {% ([ ,, path ]) => ({ kind: "Directive", name: "passage", path: path.join('') }) %}
 Inline         -> InlineOption                                          {% id %}
@@ -208,6 +215,8 @@ Inline         -> InlineOption                                          {% id %}
                   | StyledInline                                        {% id %}
                   | ClassedInline                                       {% id %}
 Text           -> %identifiable                                         {% ([ token ]) => token.value %}
+                  | %title                                              {% ([ token ]) => token.value %}
+                  | %caption                                            {% ([ token ]) => token.value %}
                   | %prefix                                             {% ([ token ]) => token.value %}
                   | %character                                          {% ([ token ]) => token.value %}
                   | %escaping                                           {% ([ token ]) => token.value %}

@@ -124,6 +124,14 @@ if \__name\__ == '\__main\__':
 
 > ![quotation](https://user-images.githubusercontent.com/101630758/227753805-394bf914-c45c-4b7f-8b86-ac354e5668c2.png)
 
+### Indentation (v1.4~)
+
+```
+Level 1
+| Level 2
+| | Level 3
+```
+
 ### Footnote
 
 ```
@@ -154,6 +162,33 @@ $$
 ```
 
 ![math](https://user-images.githubusercontent.com/101630758/227754315-0fcc1d83-5614-4230-a1c5-d2044f79e597.png)
+
+### Title and Caption (Addons of Figure) (v1.4~)
+
+- Addons of a table
+
+  ```
+  ## Title
+  <table>
+  [1][2][3]
+  </table>
+  )) Caption
+  ```
+
+- Addons of a quotation
+
+  ```
+  > ## Title
+  > 123
+  > )) Caption
+  ```
+
+- Addons of a medium
+  ```
+  ## Title
+  ![alt](url)
+  )) Caption
+  ```
 
 ### Custom CSS
 
