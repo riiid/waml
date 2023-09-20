@@ -68,6 +68,7 @@ export namespace WAML {
   export enum LinePrefix {
     QUESTION = "#",
     QUOTATION = ">",
+    INDENTATION = "|"
   }
   export type Line = {
     kind: "Line";

@@ -11,7 +11,7 @@ export class WAMLDocument{
   constructor(data:string|WAML.Document){
     const document = typeof data === "string" ? parseWAML(data) : data;
     if('error' in document){
-      throw SyntaxError(`Unable to parse the text: ${document.message}\n${document.stack.join('\n')}`);
+      throw SyntaxError(`Unable to parse the text: ${document.message}\n${document.stack?.join('\n')}`);
     }
     const answers = findAnswers(document);
 

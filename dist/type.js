@@ -20,5 +20,6 @@ export var WAML;
     (function (LinePrefix) {
         LinePrefix["QUESTION"] = "#";
         LinePrefix["QUOTATION"] = ">";
+        LinePrefix["INDENTATION"] = "|";
     })(LinePrefix = WAML.LinePrefix || (WAML.LinePrefix = {}));
 })(WAML || (WAML = {}));
