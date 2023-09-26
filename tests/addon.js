@@ -9,8 +9,9 @@ const content = `
 > )) 캡션
 
 # 매체
+!i(url)
 ## 제목
-![alt](url)
+!i[alt](url)
 )) 캡션 ## ))
 
 # 표
@@ -20,6 +21,4 @@ const content = `
 </table>
 )) 캡션
 `;
-const document = new WAMLDocument(content);
-
-console.log(document.raw);
+new WAMLDocument(content);

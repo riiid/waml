@@ -2,6 +2,12 @@
   const moo = require("moo");
   const PREFIXES = [ "#", ">", "|" ];
   const FIGURE_ADDONS = [ "##", "))" ];
+  const MEDIUM_TYPES = {
+    "i": "image",
+    "a": "audio",
+    "v": "video"
+  };
+  const mediumPattern = new RegExp(`!(${Object.keys(MEDIUM_TYPES).join("|")})?(?:\\[(.+?)\\])?\\((.+?)\\)`);
 
   const textual = {
     prefix: /[#>|](?=\s|$)/,
@@ -33,11 +39,11 @@
     caption: "))",
 
     medium: {
-      match: /!\[.+?\]\(.+?\)/,
+      match: ungroup(mediumPattern),
       value: chunk => {
-        const [ , title, uri ] = chunk.match(/^!\[(.+?)\]\((.+?)\)$/);
+        const [ , typeKey = "i", title, uri ] = chunk.match(mediumPattern);
 
-        return { title, uri };
+        return { type: MEDIUM_TYPES[typeKey], title, uri };
       }
     },
     lineBreak: { match: /\r?\n/, lineBreaks: true },
@@ -139,6 +145,12 @@
 
   let buttonOptionCounter = 0;
 
+  function ungroup(pattern){
+    return new RegExp(
+      pattern.source.replace(/(?<!\\)\((?!\?:)(.+?)(?<!\\)\)/g, "(?:$1)"),
+      pattern.flags
+    );
+  }
   function trimArray(array){
     while(array.length){
       if(typeof array[0] !== "string" || array[0].trim()){

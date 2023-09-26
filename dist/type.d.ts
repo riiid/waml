@@ -64,7 +64,7 @@ export declare namespace WAML {
         prefixes: Array<MooToken<"prefix">>;
         component: LineComponent;
     };
-    export type LineComponent = Math<false> | Directive | ClassedBlock | MooToken<"longLingualOption"> | Footnote | {
+    export type LineComponent = Math<false> | Directive | ClassedBlock | FigureAddon | MooToken<"longLingualOption"> | Footnote | {
         kind: "LineComponent";
         headOption?: ChoiceOption | ShortLingualOption;
         inlines: Inline[];
@@ -83,11 +83,16 @@ export declare namespace WAML {
     };
     export type StyledInline = {
         kind: "StyledInline";
-        style: string;
+        style: "underline" | "bold" | "italic" | "strikethrough";
         inlines: Inline[];
     };
     export type Footnote = {
         kind: "Footnote";
+        inlines: Inline[];
+    };
+    export type FigureAddon = {
+        kind: "FigureAddon";
+        type: "title" | "caption";
         inlines: Inline[];
     };
     export type ClassedBlock = {
@@ -156,9 +161,9 @@ export declare namespace WAML {
         longLingualOption: string;
         lineComment: string;
         medium: {
-            type: "image";
-            title: string;
-            url: string;
+            type: "image" | "audio" | "video";
+            uri: string;
+            alt?: string;
         };
         rowSeparator: "===";
         buttonBlank: string;

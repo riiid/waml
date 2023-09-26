@@ -14,9 +14,9 @@ export declare class WAMLDocument {
     }) | {
         type: "medium";
         value: {
-            type: "image";
-            title: string;
-            url: string;
+            type: "image" | "audio" | "video";
+            uri: string;
+            alt?: string;
         };
         text: string;
         offset: number;

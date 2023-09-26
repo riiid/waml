@@ -140,11 +140,31 @@ Level 1
 
 > ![footnote](https://user-images.githubusercontent.com/101630758/227753876-c3fb953f-5140-46ed-9b8d-3d842612f90d.png)
 
-### Medium\* (image, sound, ...)
+### Medium (image, audio, video)
 
-```
-![dog](https://example.com/images/dog.png)
-```
+- Image
+
+  ```
+  !(https://example.com/images/dog.png)
+  !i(https://example.com/images/dog.png)
+  ```
+
+- Audio
+
+  ```
+  !a(https://example.com/images/song.mp3)
+  ```
+
+- Video
+
+  ```
+  !v(https://example.com/images/movie.mp4)
+  ```
+
+- Alternative text
+  ```
+  !i[two dogs running together](https://example.com/images/dog2.png)
+  ```
 
 ### Passage Import\*
 

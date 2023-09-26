@@ -1,5 +1,3 @@
-
-
 export namespace WAML {
   export enum InteractionType{
     CHOICE_OPTION,
@@ -79,6 +77,7 @@ export namespace WAML {
     | Math<false>
     | Directive
     | ClassedBlock
+    | FigureAddon
     | MooToken<"longLingualOption">
     | Footnote
     | {
@@ -108,11 +107,16 @@ export namespace WAML {
   };
   export type StyledInline = {
     kind: "StyledInline";
-    style: string;
+    style: "underline" | "bold" | "italic" | "strikethrough";
     inlines: Inline[];
   };
   export type Footnote = {
     kind: "Footnote";
+    inlines: Inline[];
+  };
+  export type FigureAddon = {
+    kind: "FigureAddon";
+    type: "title" | "caption";
     inlines: Inline[];
   };
   export type ClassedBlock = {
@@ -188,9 +192,9 @@ export namespace WAML {
     longLingualOption: string;
     lineComment: string;
     medium: {
-      type: "image";
-      title: string;
-      url: string;
+      type: "image" | "audio" | "video";
+      uri: string;
+      alt?: string;
     };
     rowSeparator: "===";
     buttonBlank: string;

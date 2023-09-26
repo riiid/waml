@@ -48,7 +48,8 @@ export function sanitize(document, { showOptionLabels = false }) {
                 }
             }
             if (isMooToken(v, 'medium')) {
-                line.push(`[${v.value.title}]\n`);
+                if (v.value.alt)
+                    line.push(`[${v.value.alt}]\n`);
                 continue;
             }
             switch (v.kind) {
