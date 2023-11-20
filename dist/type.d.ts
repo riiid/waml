@@ -64,7 +64,7 @@ export declare namespace WAML {
         prefixes: Array<MooToken<"prefix">>;
         component: LineComponent;
     };
-    export type LineComponent = Math<false> | Directive | ClassedBlock | FigureAddon | MooToken<"longLingualOption"> | Footnote | {
+    export type LineComponent = Math<false> | Directive | ClassedBlock | FigureAddon | MooToken<"longLingualOption"> | MooToken<"hr"> | Footnote | {
         kind: "LineComponent";
         headOption?: ChoiceOption | ShortLingualOption;
         inlines: Inline[];
@@ -165,6 +165,7 @@ export declare namespace WAML {
             uri: string;
             alt?: string;
         };
+        hr: "---";
         rowSeparator: "===";
         buttonBlank: string;
     };

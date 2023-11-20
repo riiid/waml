@@ -52,6 +52,7 @@ function id(x) { return x[0]; }
     },
     lineBreak: { match: /\r?\n/, lineBreaks: true },
     spaces: /[ \t]+/,
+    hr: { match: /^-{3,}$/ },
     identifiable: textual.identifiable,
     character: textual.character
   };
@@ -214,6 +215,7 @@ var grammar = {
     {"name": "LineComponent$ebnf$1", "symbols": ["Inline"]},
     {"name": "LineComponent$ebnf$1", "symbols": ["LineComponent$ebnf$1", "Inline"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "LineComponent", "symbols": [(lexer.has("footnote") ? {type: "footnote"} : footnote), "LineComponent$ebnf$1"], "postprocess": ([ , inlines ]) => ({ kind: "Footnote", inlines: trimArray(inlines) })},
+    {"name": "LineComponent", "symbols": [(lexer.has("hr") ? {type: "hr"} : hr)], "postprocess": id},
     {"name": "LineComponent$ebnf$2", "symbols": ["Inline"]},
     {"name": "LineComponent$ebnf$2", "symbols": ["LineComponent$ebnf$2", "Inline"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "LineComponent", "symbols": ["LineComponent$ebnf$2"], "postprocess":  ([ inlines ], _, reject) => {

@@ -48,6 +48,7 @@
     },
     lineBreak: { match: /\r?\n/, lineBreaks: true },
     spaces: /[ \t]+/,
+    hr: { match: /^-{3,}$/ },
     identifiable: textual.identifiable,
     character: textual.character
   };
@@ -202,6 +203,7 @@ LineComponent  -> BlockMath                                             {% id %}
                   | FigureAddon                                         {% id %}
                   | %longLingualOption                                  {% id %}
                   | %footnote Inline:+                                  {% ([ , inlines ]) => ({ kind: "Footnote", inlines: trimArray(inlines) }) %}
+                  | %hr                                                 {% id %}
                   | Inline:+                                            {% ([ inlines ], _, reject) => {
                                                                           if(PREFIXES.includes(inlines[0])) return reject;
                                                                           if(FIGURE_ADDONS.includes(inlines[0])) return reject;

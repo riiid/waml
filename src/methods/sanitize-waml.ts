@@ -32,6 +32,9 @@ export function sanitize(document:WAML.Document, { showOptionLabels = false }:Sa
         if(isMooToken(v.component, 'longLingualOption')){
           continue;
         }
+        if(isMooToken(v.component, 'hr')){
+          continue;
+        }
         switch(v.component.kind){
           case "ClassedBlock": continue;
           case "Directive":

@@ -79,6 +79,7 @@ export namespace WAML {
     | ClassedBlock
     | FigureAddon
     | MooToken<"longLingualOption">
+    | MooToken<"hr">
     | Footnote
     | {
         kind: "LineComponent";
@@ -196,6 +197,7 @@ export namespace WAML {
       uri: string;
       alt?: string;
     };
+    hr: "---";
     rowSeparator: "===";
     buttonBlank: string;
   };

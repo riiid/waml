@@ -25,6 +25,9 @@ export function sanitize(document, { showOptionLabels = false }) {
                 if (isMooToken(v.component, 'longLingualOption')) {
                     continue;
                 }
+                if (isMooToken(v.component, 'hr')) {
+                    continue;
+                }
                 switch (v.component.kind) {
                     case "ClassedBlock": continue;
                     case "Directive":
