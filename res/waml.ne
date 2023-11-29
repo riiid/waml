@@ -34,6 +34,7 @@
     sUnderlineOpen: { match: /__/, push: "sUnderline" },
     sBoldOpen: { match: /\*\*/, push: "sBold" },
     footnote: "*)",
+    anchor: "^>",
     sItalicOpen: { match: /(?<!\\)\*/, push: "sItalic" },
     title: "##",
     caption: "))",
@@ -203,6 +204,7 @@ LineComponent  -> BlockMath                                             {% id %}
                   | FigureAddon                                         {% id %}
                   | %longLingualOption                                  {% id %}
                   | %footnote Inline:+                                  {% ([ , inlines ]) => ({ kind: "Footnote", inlines: trimArray(inlines) }) %}
+                  | %anchor Inline:+                                    {% ([ , inlines ]) => ({ kind: "Anchor", inlines: trimArray(inlines) }) %}
                   | %hr                                                 {% id %}
                   | Inline:+                                            {% ([ inlines ], _, reject) => {
                                                                           if(PREFIXES.includes(inlines[0])) return reject;

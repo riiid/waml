@@ -81,6 +81,7 @@ export namespace WAML {
     | MooToken<"longLingualOption">
     | MooToken<"hr">
     | Footnote
+    | Anchor
     | {
         kind: "LineComponent";
         headOption?: ChoiceOption | ShortLingualOption;
@@ -113,6 +114,10 @@ export namespace WAML {
   };
   export type Footnote = {
     kind: "Footnote";
+    inlines: Inline[];
+  };
+  export type Anchor = {
+    kind: "Anchor";
     inlines: Inline[];
   };
   export type FigureAddon = {

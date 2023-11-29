@@ -38,6 +38,7 @@ function id(x) { return x[0]; }
     sUnderlineOpen: { match: /__/, push: "sUnderline" },
     sBoldOpen: { match: /\*\*/, push: "sBold" },
     footnote: "*)",
+    anchor: "^>",
     sItalicOpen: { match: /(?<!\\)\*/, push: "sItalic" },
     title: "##",
     caption: "))",
@@ -215,10 +216,13 @@ var grammar = {
     {"name": "LineComponent$ebnf$1", "symbols": ["Inline"]},
     {"name": "LineComponent$ebnf$1", "symbols": ["LineComponent$ebnf$1", "Inline"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "LineComponent", "symbols": [(lexer.has("footnote") ? {type: "footnote"} : footnote), "LineComponent$ebnf$1"], "postprocess": ([ , inlines ]) => ({ kind: "Footnote", inlines: trimArray(inlines) })},
-    {"name": "LineComponent", "symbols": [(lexer.has("hr") ? {type: "hr"} : hr)], "postprocess": id},
     {"name": "LineComponent$ebnf$2", "symbols": ["Inline"]},
     {"name": "LineComponent$ebnf$2", "symbols": ["LineComponent$ebnf$2", "Inline"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "LineComponent", "symbols": ["LineComponent$ebnf$2"], "postprocess":  ([ inlines ], _, reject) => {
+    {"name": "LineComponent", "symbols": [(lexer.has("anchor") ? {type: "anchor"} : anchor), "LineComponent$ebnf$2"], "postprocess": ([ , inlines ]) => ({ kind: "Anchor", inlines: trimArray(inlines) })},
+    {"name": "LineComponent", "symbols": [(lexer.has("hr") ? {type: "hr"} : hr)], "postprocess": id},
+    {"name": "LineComponent$ebnf$3", "symbols": ["Inline"]},
+    {"name": "LineComponent$ebnf$3", "symbols": ["LineComponent$ebnf$3", "Inline"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "LineComponent", "symbols": ["LineComponent$ebnf$3"], "postprocess":  ([ inlines ], _, reject) => {
           if(PREFIXES.includes(inlines[0])) return reject;
           if(FIGURE_ADDONS.includes(inlines[0])) return reject;
         
