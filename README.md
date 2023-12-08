@@ -132,6 +132,25 @@ Level 1
 | | Level 3
 ```
 
+### Horizontal Line (v1.4~)
+
+```
+A
+---
+B
+```
+
+### Anchor (v1.4~)
+
+```
+$$
+  x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}
+$$
+^> (1)
+```
+
+> ![anchor](https://github.com/riiid/waml/assets/101630758/74a5ee70-0c26-4cc3-859b-9eeb587a2672)
+
 ### Footnote
 
 ```
