@@ -29,11 +29,11 @@ function id(x) { return x[0]; }
     longLingualOption: { match: /\{{3}.*?\}{3}/, value: chunk => chunk.slice(3, -3) },
     shortLingualOptionOpen: { match: /{{/, push: "option" },
     buttonBlank: { match: /{\[_{3,}\]}/, value: "default" },
-    buttonOptionOpen: { match: /{\[/, push: "objectiveOption" },
-    choiceOptionOpen: { match: /{/, push: "objectiveOption" },
+    buttonOptionOpen: { match: /{\[/, push: "singleButtonOption" },
+    choiceOptionOpen: { match: /{/, push: "singleChoiceOption" },
 
-    dAnswer: "@answer",
-    dPassage: "@passage",
+    dKVDirective: { match: /@(?:passage|answertype)\b/, value: chunk => chunk.slice(1) },
+    dAnswer: { match: "@answer", push: "answer" },
     sStrikethroughOpen: { match: /~~/, push: "sStrikethrough" },
     sUnderlineOpen: { match: /__/, push: "sUnderline" },
     sBoldOpen: { match: /\*\*/, push: "sBold" },
@@ -109,13 +109,44 @@ function id(x) { return x[0]; }
       }},
       ...omit(main, 'classClose')
     },
-    option: {
+    answer: {
+      pairingNetOpen: { match: /(?<=[\w가-힣]){\s*/, push: "pairingNet" },
+      shortLingualOptionOpen: { match: /{{/, push: "option" },
+      buttonOptionOpen: { match: /{\[/, push: "objectiveOption" },
+      choiceOptionOpen: { match: /{/, push: "objectiveOption" },
+      identifiable: textual.identifiable,
+      spaces: withoutXML.spaces
+    },
+    pairingNet: {
+      pairingNetItemOpen: { match: /{/, push: "pairingNetItem" },
+      arraySeparator: /\s*,\s*/,
+      pairingNetClose: { match: /\s*}\s*/, pop: 1 },
+      spaces: withoutXML.spaces
+    },
+    pairingNetItem: {
+      pairingNetItemArrow: /\s*->\s*/,
+      pairingNetItemClose: { match: /}/, pop: 1 },
+      identifiable: textual.identifiable,
+      spaces: withoutXML.spaces
+    },
+    option: { // 단답형
       escaping: withoutXML.escaping,
       shortLingualOptionClose: { match: /}}/, pop: 1 },
       shortLingualDefaultValue: { match: "=" },
       ...textual
     },
-    objectiveOption: {
+    singleButtonOption: { // @answer 이외
+      escaping: withoutXML.escaping,
+      buttonOptionClose: { match: /,?]}/, pop: 1 },
+      ...textual
+    },
+    singleChoiceOption: { // @answer 이외
+      escaping: withoutXML.escaping,
+      pairingSeparator: /\s*(?:->|=>|<-|<=)\s*/,
+      choiceOptionClose: { match: /,?}/, pop: 1 },
+      ...textual
+    },
+    objectiveOption: { // @answer 한정
       escaping: withoutXML.escaping,
       buttonOptionClose: { match: /,?]}/, pop: 1 },
       choiceOptionClose: { match: /,?}/, pop: 1 },
@@ -212,17 +243,20 @@ var grammar = {
     {"name": "LineComponent", "symbols": ["Directive"], "postprocess": id},
     {"name": "LineComponent", "symbols": ["ClassedBlock"], "postprocess": id},
     {"name": "LineComponent", "symbols": ["FigureAddon"], "postprocess": id},
-    {"name": "LineComponent", "symbols": [(lexer.has("longLingualOption") ? {type: "longLingualOption"} : longLingualOption)], "postprocess": id},
     {"name": "LineComponent$ebnf$1", "symbols": ["Inline"]},
     {"name": "LineComponent$ebnf$1", "symbols": ["LineComponent$ebnf$1", "Inline"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "LineComponent", "symbols": [(lexer.has("footnote") ? {type: "footnote"} : footnote), "LineComponent$ebnf$1"], "postprocess": ([ , inlines ]) => ({ kind: "Footnote", inlines: trimArray(inlines) })},
+    {"name": "LineComponent", "symbols": ["PairingCell", "LineComponent$ebnf$1"], "postprocess": ([ cell, inlines ]) => ({ kind: "PairingOption", cell, inlines: trimArray(inlines) })},
+    {"name": "LineComponent", "symbols": [(lexer.has("longLingualOption") ? {type: "longLingualOption"} : longLingualOption)], "postprocess": id},
     {"name": "LineComponent$ebnf$2", "symbols": ["Inline"]},
     {"name": "LineComponent$ebnf$2", "symbols": ["LineComponent$ebnf$2", "Inline"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "LineComponent", "symbols": [(lexer.has("anchor") ? {type: "anchor"} : anchor), "LineComponent$ebnf$2"], "postprocess": ([ , inlines ]) => ({ kind: "Anchor", inlines: trimArray(inlines) })},
-    {"name": "LineComponent", "symbols": [(lexer.has("hr") ? {type: "hr"} : hr)], "postprocess": id},
+    {"name": "LineComponent", "symbols": [(lexer.has("footnote") ? {type: "footnote"} : footnote), "LineComponent$ebnf$2"], "postprocess": ([ , inlines ]) => ({ kind: "Footnote", inlines: trimArray(inlines) })},
     {"name": "LineComponent$ebnf$3", "symbols": ["Inline"]},
     {"name": "LineComponent$ebnf$3", "symbols": ["LineComponent$ebnf$3", "Inline"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "LineComponent", "symbols": ["LineComponent$ebnf$3"], "postprocess":  ([ inlines ], _, reject) => {
+    {"name": "LineComponent", "symbols": [(lexer.has("anchor") ? {type: "anchor"} : anchor), "LineComponent$ebnf$3"], "postprocess": ([ , inlines ]) => ({ kind: "Anchor", inlines: trimArray(inlines) })},
+    {"name": "LineComponent", "symbols": [(lexer.has("hr") ? {type: "hr"} : hr)], "postprocess": id},
+    {"name": "LineComponent$ebnf$4", "symbols": ["Inline"]},
+    {"name": "LineComponent$ebnf$4", "symbols": ["LineComponent$ebnf$4", "Inline"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "LineComponent", "symbols": ["LineComponent$ebnf$4"], "postprocess":  ([ inlines ], _, reject) => {
           if(PREFIXES.includes(inlines[0])) return reject;
           if(FIGURE_ADDONS.includes(inlines[0])) return reject;
         
@@ -240,12 +274,16 @@ var grammar = {
     {"name": "FigureAddon$ebnf$1", "symbols": ["Inline"]},
     {"name": "FigureAddon$ebnf$1", "symbols": ["FigureAddon$ebnf$1", "Inline"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "FigureAddon", "symbols": ["FigureAddon$subexpression$1", (lexer.has("spaces") ? {type: "spaces"} : spaces), "FigureAddon$ebnf$1"], "postprocess": ([ [{ type }],, inlines ]) => ({ kind: "FigureAddon", type, inlines: trimArray(inlines) })},
-    {"name": "Directive$ebnf$1", "symbols": ["InlineOption"]},
-    {"name": "Directive$ebnf$1", "symbols": ["Directive$ebnf$1", "InlineOption"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "Directive", "symbols": [(lexer.has("dAnswer") ? {type: "dAnswer"} : dAnswer), (lexer.has("spaces") ? {type: "spaces"} : spaces), "Directive$ebnf$1"], "postprocess": ([ ,, options ]) => ({ kind: "Directive", name: "answer", options })},
+    {"name": "Directive$ebnf$1$subexpression$1", "symbols": ["InlineOption"]},
+    {"name": "Directive$ebnf$1$subexpression$1", "symbols": ["PairingNet"]},
+    {"name": "Directive$ebnf$1", "symbols": ["Directive$ebnf$1$subexpression$1"]},
+    {"name": "Directive$ebnf$1$subexpression$2", "symbols": ["InlineOption"]},
+    {"name": "Directive$ebnf$1$subexpression$2", "symbols": ["PairingNet"]},
+    {"name": "Directive$ebnf$1", "symbols": ["Directive$ebnf$1", "Directive$ebnf$1$subexpression$2"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "Directive", "symbols": [(lexer.has("dAnswer") ? {type: "dAnswer"} : dAnswer), (lexer.has("spaces") ? {type: "spaces"} : spaces), "Directive$ebnf$1"], "postprocess": ([ ,, options ]) => ({ kind: "Directive", name: "answer", options: options.map(v => v[0]) })},
     {"name": "Directive$ebnf$2", "symbols": ["Text"]},
     {"name": "Directive$ebnf$2", "symbols": ["Directive$ebnf$2", "Text"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "Directive", "symbols": [(lexer.has("dPassage") ? {type: "dPassage"} : dPassage), (lexer.has("spaces") ? {type: "spaces"} : spaces), "Directive$ebnf$2"], "postprocess": ([ ,, path ]) => ({ kind: "Directive", name: "passage", path: path.join('') })},
+    {"name": "Directive", "symbols": [(lexer.has("dKVDirective") ? {type: "dKVDirective"} : dKVDirective), (lexer.has("spaces") ? {type: "spaces"} : spaces), "Directive$ebnf$2"], "postprocess": ([ token,, path ]) => ({ kind: "Directive", name: token.value, path: path.join('') })},
     {"name": "Inline", "symbols": ["InlineOption"], "postprocess": id},
     {"name": "Inline", "symbols": [(lexer.has("buttonBlank") ? {type: "buttonBlank"} : buttonBlank)], "postprocess": id},
     {"name": "Inline", "symbols": [(lexer.has("medium") ? {type: "medium"} : medium)], "postprocess": id},
@@ -401,6 +439,33 @@ var grammar = {
     {"name": "OptionRest$ebnf$2$subexpression$2", "symbols": [(lexer.has("unorderedOptionSeparator") ? {type: "unorderedOptionSeparator"} : unorderedOptionSeparator), "OptionRest$ebnf$2$subexpression$2$ebnf$1"]},
     {"name": "OptionRest$ebnf$2", "symbols": ["OptionRest$ebnf$2", "OptionRest$ebnf$2$subexpression$2"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "OptionRest", "symbols": ["OptionRest$ebnf$2"], "postprocess": ([ list ]) => ({ kind: "UnorderedOptionRest", value: list.map(v => v[1].join('')) })},
+    {"name": "PairingCell$ebnf$1", "symbols": [(lexer.has("identifiable") ? {type: "identifiable"} : identifiable)]},
+    {"name": "PairingCell$ebnf$1", "symbols": ["PairingCell$ebnf$1", (lexer.has("identifiable") ? {type: "identifiable"} : identifiable)], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "PairingCell$ebnf$2$subexpression$1$ebnf$1", "symbols": [(lexer.has("identifiable") ? {type: "identifiable"} : identifiable)]},
+    {"name": "PairingCell$ebnf$2$subexpression$1$ebnf$1", "symbols": ["PairingCell$ebnf$2$subexpression$1$ebnf$1", (lexer.has("identifiable") ? {type: "identifiable"} : identifiable)], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "PairingCell$ebnf$2$subexpression$1", "symbols": [(lexer.has("pairingSeparator") ? {type: "pairingSeparator"} : pairingSeparator), "PairingCell$ebnf$2$subexpression$1$ebnf$1"]},
+    {"name": "PairingCell$ebnf$2", "symbols": ["PairingCell$ebnf$2$subexpression$1"]},
+    {"name": "PairingCell$ebnf$2$subexpression$2$ebnf$1", "symbols": [(lexer.has("identifiable") ? {type: "identifiable"} : identifiable)]},
+    {"name": "PairingCell$ebnf$2$subexpression$2$ebnf$1", "symbols": ["PairingCell$ebnf$2$subexpression$2$ebnf$1", (lexer.has("identifiable") ? {type: "identifiable"} : identifiable)], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "PairingCell$ebnf$2$subexpression$2", "symbols": [(lexer.has("pairingSeparator") ? {type: "pairingSeparator"} : pairingSeparator), "PairingCell$ebnf$2$subexpression$2$ebnf$1"]},
+    {"name": "PairingCell$ebnf$2", "symbols": ["PairingCell$ebnf$2", "PairingCell$ebnf$2$subexpression$2"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "PairingCell", "symbols": [(lexer.has("choiceOptionOpen") ? {type: "choiceOptionOpen"} : choiceOptionOpen), "PairingCell$ebnf$1", "PairingCell$ebnf$2", (lexer.has("choiceOptionClose") ? {type: "choiceOptionClose"} : choiceOptionClose)], "postprocess":  ([ , first, rest ], _, reject) => {
+          const inbound = [];
+          const outbound = [];
+        
+          for(const [ separator, names ] of rest){
+            const name = names.join('');
+        
+            switch(separator.value.trim()){
+              case "->": outbound.push({ name, multiple: false }); break;
+              case "=>": outbound.push({ name, multiple: true }); break;
+              case "<-": inbound.push({ name, multiple: false }); break;
+              case "<=": inbound.push({ name, multiple: true }); break;
+              default: reject(); return;
+            }
+          }
+          return { kind: "PairingCell", value: first.join(''), inbound, outbound };
+        }},
     {"name": "ShortLingualOption$ebnf$1", "symbols": [(lexer.has("shortLingualDefaultValue") ? {type: "shortLingualDefaultValue"} : shortLingualDefaultValue)], "postprocess": id},
     {"name": "ShortLingualOption$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
     {"name": "ShortLingualOption$ebnf$2", "symbols": []},
@@ -409,6 +474,32 @@ var grammar = {
           kind: "ShortLingualOption",
           value: value.join(''),
           defaultValue: Boolean(defaultValue)
+        })},
+    {"name": "PairingNet$ebnf$1", "symbols": [(lexer.has("identifiable") ? {type: "identifiable"} : identifiable)]},
+    {"name": "PairingNet$ebnf$1", "symbols": ["PairingNet$ebnf$1", (lexer.has("identifiable") ? {type: "identifiable"} : identifiable)], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "PairingNet$macrocall$2", "symbols": ["PairingNetItem"]},
+    {"name": "PairingNet$macrocall$3", "symbols": [(lexer.has("arraySeparator") ? {type: "arraySeparator"} : arraySeparator)]},
+    {"name": "PairingNet$macrocall$1$ebnf$1", "symbols": []},
+    {"name": "PairingNet$macrocall$1$ebnf$1$subexpression$1", "symbols": ["PairingNet$macrocall$3", "PairingNet$macrocall$2"]},
+    {"name": "PairingNet$macrocall$1$ebnf$1", "symbols": ["PairingNet$macrocall$1$ebnf$1", "PairingNet$macrocall$1$ebnf$1$subexpression$1"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "PairingNet$macrocall$1", "symbols": ["PairingNet$macrocall$2", "PairingNet$macrocall$1$ebnf$1"], "postprocess": ([ first, rest ]) => [ first[0], ...rest.map(v => v[1][0]) ]},
+    {"name": "PairingNet", "symbols": ["PairingNet$ebnf$1", (lexer.has("pairingNetOpen") ? {type: "pairingNetOpen"} : pairingNetOpen), "PairingNet$macrocall$1", (lexer.has("pairingNetClose") ? {type: "pairingNetClose"} : pairingNetClose)], "postprocess":  ([ name,, list ]) => ({
+          kind: "PairingNet",
+          name: name.join(''),
+          list
+        })},
+    {"name": "PairingNetItem$ebnf$1", "symbols": [(lexer.has("spaces") ? {type: "spaces"} : spaces)], "postprocess": id},
+    {"name": "PairingNetItem$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
+    {"name": "PairingNetItem$ebnf$2", "symbols": [(lexer.has("identifiable") ? {type: "identifiable"} : identifiable)]},
+    {"name": "PairingNetItem$ebnf$2", "symbols": ["PairingNetItem$ebnf$2", (lexer.has("identifiable") ? {type: "identifiable"} : identifiable)], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "PairingNetItem$ebnf$3", "symbols": [(lexer.has("identifiable") ? {type: "identifiable"} : identifiable)]},
+    {"name": "PairingNetItem$ebnf$3", "symbols": ["PairingNetItem$ebnf$3", (lexer.has("identifiable") ? {type: "identifiable"} : identifiable)], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "PairingNetItem$ebnf$4", "symbols": [(lexer.has("spaces") ? {type: "spaces"} : spaces)], "postprocess": id},
+    {"name": "PairingNetItem$ebnf$4", "symbols": [], "postprocess": function(d) {return null;}},
+    {"name": "PairingNetItem", "symbols": [(lexer.has("pairingNetItemOpen") ? {type: "pairingNetItemOpen"} : pairingNetItemOpen), "PairingNetItem$ebnf$1", "PairingNetItem$ebnf$2", (lexer.has("pairingNetItemArrow") ? {type: "pairingNetItemArrow"} : pairingNetItemArrow), "PairingNetItem$ebnf$3", "PairingNetItem$ebnf$4", (lexer.has("pairingNetItemClose") ? {type: "pairingNetItemClose"} : pairingNetItemClose)], "postprocess":  ([ ,, from,, to ]) => ({
+          kind: "PairingNetItem",
+          from: from.join(''),
+          to: to.join('')
         })}
 ]
   , ParserStart: "Main"

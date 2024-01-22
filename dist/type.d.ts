@@ -2,7 +2,8 @@ export declare namespace WAML {
     export enum InteractionType {
         CHOICE_OPTION = 0,
         BUTTON_OPTION = 1,
-        SHORT_LINGUAL_OPTION = 2
+        SHORT_LINGUAL_OPTION = 2,
+        PAIRING_NET = 3
     }
     export enum ChoiceOptionGroup {
         NUMERIC = 0,
@@ -47,12 +48,17 @@ export declare namespace WAML {
         multipleness?: "ordered" | "unordered";
     } | {
         type: InteractionType.BUTTON_OPTION;
-        group: string;
+        group: "default";
         values: string[];
         multipleness?: "ordered" | "unordered";
     } | {
         type: InteractionType.SHORT_LINGUAL_OPTION;
         placeholder: string;
+    } | {
+        type: InteractionType.PAIRING_NET;
+        name: string;
+        fromValues: string[];
+        toValues: string[];
     });
     export enum LinePrefix {
         QUESTION = "#",
@@ -64,13 +70,13 @@ export declare namespace WAML {
         prefixes: Array<MooToken<"prefix">>;
         component: LineComponent;
     };
-    export type LineComponent = Math<false> | Directive | ClassedBlock | FigureAddon | MooToken<"longLingualOption"> | MooToken<"hr"> | Footnote | Anchor | {
+    export type LineComponent = Math<false> | Directive | ClassedBlock | FigureAddon | PairingOption | MooToken<"longLingualOption"> | MooToken<"hr"> | Footnote | Anchor | {
         kind: "LineComponent";
         headOption?: ChoiceOption | ShortLingualOption;
         inlines: Inline[];
     } | LineXMLElement | null;
     export type Inline = InlineOption | MooToken<"medium"> | Math<true> | StyledInline | ClassedInline | string;
-    export type Options = AnswerFormOf<InlineOption>[];
+    export type Options = Array<AnswerFormOf<InlineOption> | PairingNet>;
     export type InlineOption = ChoiceOption | ButtonOption | ShortLingualOption;
     export type ChoiceOption = ObjectiveOption<"ChoiceOption">;
     export type ButtonOption = ObjectiveOption<"ButtonOption"> & {
@@ -98,6 +104,26 @@ export declare namespace WAML {
         kind: "FigureAddon";
         type: "title" | "caption";
         inlines: Inline[];
+    };
+    export type PairingOption = {
+        kind: "PairingOption";
+        cell: PairingCell;
+    };
+    export type PairingCell = {
+        kind: "PairingCell";
+        value: string;
+        inbound: PairingEdge[];
+        outbound: PairingEdge[];
+    };
+    export type PairingNet = {
+        kind: "PairingNet";
+        name: string;
+        list: PairingNetItem[];
+    };
+    export type PairingNetItem = {
+        kind: "PairingNetItem";
+        from: string;
+        to: string;
     };
     export type ClassedBlock = {
         kind: "ClassedBlock";
@@ -140,7 +166,7 @@ export declare namespace WAML {
         kind: "XMLElement";
         tag: "table";
         attributes: XMLAttribute[];
-        content: Array<TableCell | MooToken<'rowSeparator'>>;
+        content: Array<TableCell | MooToken<"rowSeparator">>;
     };
     export type TableCell = {
         kind: "Cell";
@@ -178,9 +204,13 @@ export declare namespace WAML {
         value: string;
         ordered: undefined;
     };
-    type AnswerFormOf<T extends InlineOption> = T extends ChoiceOption | ButtonOption ? T | (Omit<T, 'value' | 'ordered'> & {
+    type AnswerFormOf<T extends InlineOption> = T extends ChoiceOption | ButtonOption ? T | (Omit<T, "value" | "ordered"> & {
         value: string[];
         ordered: boolean;
     }) : T;
+    type PairingEdge = {
+        name: string;
+        multiple: boolean;
+    };
     export {};
 }

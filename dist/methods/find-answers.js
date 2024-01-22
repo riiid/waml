@@ -12,7 +12,7 @@ export function findAnswers(document) {
         if (v.component.options.length > 1) {
             R.push({
                 type: "COMBINED",
-                children: v.component.options.map(parse)
+                children: v.component.options.map(parse),
             });
         }
         else {
@@ -20,7 +20,14 @@ export function findAnswers(document) {
         }
         function parse(option) {
             switch (option.kind) {
-                case "ShortLingualOption": return { type: "SINGLE", value: [option.value] };
+                case "PairingNet":
+                    return {
+                        type: "MULTIPLE",
+                        ordered: false,
+                        value: option.list.map(({ from, to }) => `${from}→${to}`),
+                    };
+                case "ShortLingualOption":
+                    return { type: "SINGLE", value: [option.value] };
                 case "ButtonOption":
                 case "ChoiceOption":
                     if (typeof option.value === "string") {
@@ -29,7 +36,11 @@ export function findAnswers(document) {
                     // NOTE `@answer {2,1}`이라 적었을 때 학생이 1 -> 2 순으로 답을 내는 경우에도 정답 처리하기 위함
                     if (!option.ordered)
                         option.value.sort();
-                    return { type: "MULTIPLE", value: option.value, ordered: option.ordered };
+                    return {
+                        type: "MULTIPLE",
+                        value: option.value,
+                        ordered: option.ordered,
+                    };
             }
         }
     }
@@ -42,12 +53,42 @@ export function getAnswerFormat(document, answer) {
     const interactions = [];
     const existingChoiceOptionGroup = {};
     const existingButtonOptionGroup = {};
+    const existingPairingNetGroup = {};
     for (const v of document) {
         if (typeof v === "string" || !hasKind(v, "Line"))
             continue;
-        if (hasKind(v.component, "LineComponent")) {
+        if (hasKind(v.component, "PairingOption")) {
+            for (const w of v.component.cell.inbound) {
+                const group = existingPairingNetGroup[w.name] ||
+                    (existingPairingNetGroup[w.name] = {
+                        type: WAML.InteractionType.PAIRING_NET,
+                        index: interactions.length,
+                        name: w.name,
+                        fromValues: [],
+                        toValues: [],
+                    });
+                if (group.index === interactions.length)
+                    interactions.push(group);
+                group.toValues.push(v.component.cell.value);
+            }
+            for (const w of v.component.cell.outbound) {
+                const group = existingPairingNetGroup[w.name] ||
+                    (existingPairingNetGroup[w.name] = {
+                        type: WAML.InteractionType.PAIRING_NET,
+                        index: interactions.length,
+                        name: w.name,
+                        fromValues: [],
+                        toValues: [],
+                    });
+                if (group.index === interactions.length)
+                    interactions.push(group);
+                group.fromValues.push(v.component.cell.value);
+            }
+        }
+        else if (hasKind(v.component, "LineComponent")) {
             switch ((_a = v.component.headOption) === null || _a === void 0 ? void 0 : _a.kind) {
-                case undefined: break;
+                case undefined:
+                    break;
                 case "ChoiceOption":
                     handleChoiceOption(v.component.headOption.value);
                     break;
@@ -55,7 +96,7 @@ export function getAnswerFormat(document, answer) {
                     iterate([v.component.headOption]);
                     break;
                 default:
-                    throw Error(`Unhandled headOption: ${v.component.headOption['kind']}`);
+                    throw Error(`Unhandled headOption: ${v.component.headOption["kind"]}`);
             }
             iterate(v.component.inlines);
         }
@@ -82,17 +123,19 @@ export function getAnswerFormat(document, answer) {
                 interactions.push({
                     index: interactions.length,
                     type: WAML.InteractionType.SHORT_LINGUAL_OPTION,
-                    placeholder: v.value
+                    placeholder: v.value,
                 });
             }
         }
     }
     function handleChoiceOption(value) {
         let group;
-        if (ambiguousLowerRomanValues.includes(value) && choiceOptionValues.includes("ii")) {
+        if (ambiguousLowerRomanValues.includes(value) &&
+            choiceOptionValues.includes("ii")) {
             group = WAML.ChoiceOptionGroup.LOWER_ROMAN;
         }
-        else if (ambiguousUpperRomanValues.includes(value) && choiceOptionValues.includes("II")) {
+        else if (ambiguousUpperRomanValues.includes(value) &&
+            choiceOptionValues.includes("II")) {
             group = WAML.ChoiceOptionGroup.UPPER_ROMAN;
         }
         else {
@@ -102,13 +145,13 @@ export function getAnswerFormat(document, answer) {
             existingChoiceOptionGroup[group].values.push(value);
         }
         else {
-            interactions.push(existingChoiceOptionGroup[group] = {
+            interactions.push((existingChoiceOptionGroup[group] = {
                 index: interactions.length,
                 type: WAML.InteractionType.CHOICE_OPTION,
                 group,
                 values: [value],
-                multipleness: getMultipleness(interactions.length)
-            });
+                multipleness: getMultipleness(interactions.length),
+            }));
         }
     }
     function handleButtonOption(value) {
@@ -118,13 +161,13 @@ export function getAnswerFormat(document, answer) {
             existingButtonOptionGroup[group].values.push(value);
             return;
         }
-        interactions.push(existingButtonOptionGroup[group] = {
+        interactions.push((existingButtonOptionGroup[group] = {
             index: interactions.length,
             type: WAML.InteractionType.BUTTON_OPTION,
             group,
             values: [value],
-            multipleness: getMultipleness(interactions.length)
-        });
+            multipleness: getMultipleness(interactions.length),
+        }));
     }
     function getMultipleness(index) {
         const chunk = flattenAnswers[index];

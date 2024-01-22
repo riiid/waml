@@ -6,17 +6,20 @@ import Grammar from "../res/waml.cjs";
 const grammar = Nearley.Grammar.fromCompiled(Grammar);
 
 type ParsingOptions = {
-  'removeAnswers'?: boolean
+  removeAnswers?: boolean;
 };
-export function parseWAML(text:string, options:ParsingOptions = {}):WAML.Document|WAML.ParserError{
+export function parseWAML(
+  text: string,
+  options: ParsingOptions = {}
+): WAML.Document | WAML.ParserError {
   const parser = new Nearley.Parser(grammar);
 
   try {
     parser.feed(text);
-    if(!parser.results.length){
+    if (!parser.results.length) {
       return {
         error: true,
-        message: "Invalid input"
+        message: "Invalid input",
       };
     }
     if (parser.results.length > 1) {
@@ -24,7 +27,7 @@ export function parseWAML(text:string, options:ParsingOptions = {}):WAML.Documen
     }
     const R = parser.results[0];
 
-    if(options.removeAnswers) removeAnswers(R);
+    if (options.removeAnswers) removeAnswers(R);
     return R;
   } catch (error) {
     if (!isNearleyError(error)) {
@@ -39,21 +42,26 @@ export function parseWAML(text:string, options:ParsingOptions = {}):WAML.Documen
     };
   }
 }
-function removeAnswers(document:WAML.Document):void{
-  for(let i = 0; i < document.length; i++){
+function removeAnswers(document: WAML.Document): void {
+  for (let i = 0; i < document.length; i++) {
     const v = document[i];
 
-    if(isMooToken(v, "lineComment")){
+    if (isMooToken(v, "lineComment")) {
       document.splice(i--, 1);
       continue;
     }
-    if(v.kind === "XMLElement" && v.tag === "explanation"){
+    if (v.kind === "XMLElement" && v.tag === "explanation") {
       document.splice(i--, 1);
       continue;
     }
-    if(v.kind === "Line" && hasKind(v.component, "Directive") && v.component.name === "answer"){
-      for(const w of v.component.options){
-        if(typeof w.value === "string") w.value = "";
+    if (
+      v.kind === "Line" &&
+      hasKind(v.component, "Directive") &&
+      v.component.name === "answer"
+    ) {
+      for (const w of v.component.options) {
+        if (hasKind(w, "PairingNet")) w.list = [];
+        else if (typeof w.value === "string") w.value = "";
         else w.value = [];
       }
       continue;
@@ -63,6 +71,7 @@ function removeAnswers(document:WAML.Document):void{
 function isNearleyError(error: unknown): error is Error {
   return (
     error instanceof Error &&
-    (error.message.startsWith("invalid syntax at") || error.message.startsWith("Syntax error at"))
+    (error.message.startsWith("invalid syntax at") ||
+      error.message.startsWith("Syntax error at"))
   );
 }

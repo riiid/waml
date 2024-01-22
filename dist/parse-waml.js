@@ -9,7 +9,7 @@ export function parseWAML(text, options = {}) {
         if (!parser.results.length) {
             return {
                 error: true,
-                message: "Invalid input"
+                message: "Invalid input",
             };
         }
         if (parser.results.length > 1) {
@@ -43,9 +43,13 @@ function removeAnswers(document) {
             document.splice(i--, 1);
             continue;
         }
-        if (v.kind === "Line" && hasKind(v.component, "Directive") && v.component.name === "answer") {
+        if (v.kind === "Line" &&
+            hasKind(v.component, "Directive") &&
+            v.component.name === "answer") {
             for (const w of v.component.options) {
-                if (typeof w.value === "string")
+                if (hasKind(w, "PairingNet"))
+                    w.list = [];
+                else if (typeof w.value === "string")
                     w.value = "";
                 else
                     w.value = [];
@@ -56,5 +60,6 @@ function removeAnswers(document) {
 }
 function isNearleyError(error) {
     return (error instanceof Error &&
-        (error.message.startsWith("invalid syntax at") || error.message.startsWith("Syntax error at")));
+        (error.message.startsWith("invalid syntax at") ||
+            error.message.startsWith("Syntax error at")));
 }

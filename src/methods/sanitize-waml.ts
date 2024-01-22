@@ -3,53 +3,66 @@ import { WAML } from "../type.js";
 import { getCircledLetter } from "../utility.js";
 
 export type SanitizationOptions = {
-  'showOptionLabels'?: boolean
+  showOptionLabels?: boolean;
 };
-export function sanitize(document:WAML.Document, { showOptionLabels = false }:SanitizationOptions):string{
+export function sanitize(
+  document: WAML.Document,
+  { showOptionLabels = false }: SanitizationOptions
+): string {
   return iterate(document).trim();
 
-  function iterate(nodes:WAML.Document|WAML.Inline[], initialLine:string[] = []):string{
+  function iterate(
+    nodes: WAML.Document | WAML.Inline[],
+    initialLine: string[] = []
+  ): string {
     const line = initialLine;
 
-    for(const v of nodes){
-      if(typeof v === "string"){
+    for (const v of nodes) {
+      if (typeof v === "string") {
         line.push(v);
         continue;
       }
-      if(isMooToken(v, 'lineComment')){
+      if (isMooToken(v, "lineComment")) {
         continue;
       }
-      if(hasKind(v, "XMLElement")){
-        if(v.tag === "explanation"){
+      if (hasKind(v, "XMLElement")) {
+        if (v.tag === "explanation") {
           line.push(iterate(v.content) + "\n");
         }
         continue;
       }
-      if(hasKind(v, "Line")){
-        if(v.component === null){
+      if (hasKind(v, "Line")) {
+        if (v.component === null) {
           continue;
         }
-        if(isMooToken(v.component, 'longLingualOption')){
+        if (isMooToken(v.component, "longLingualOption")) {
           continue;
         }
-        if(isMooToken(v.component, 'hr')){
+        if (isMooToken(v.component, "hr")) {
           continue;
         }
-        switch(v.component.kind){
-          case "ClassedBlock": continue;
+        switch (v.component.kind) {
+          case "ClassedBlock":
+            continue;
           case "Directive":
-            if(v.component.name === "answer"){
-              for(const w of v.component.options){
-                if(w.kind !== "ShortLingualOption") continue;
-                line.push(w.value + "\n");
+            if (v.component.name === "answer") {
+              if ("options" in v.component) {
+                for (const w of v.component.options) {
+                  if (w.kind !== "ShortLingualOption") continue;
+                  line.push(w.value + "\n");
+                }
               }
             }
             continue;
           case "LineComponent":
-            line.push(iterate(
-              v.component.inlines,
-              v.component.headOption && showOptionLabels ? [ `${getCircledLetter(v.component.headOption.value)} ` ] : []
-            ) + "\n");
+            line.push(
+              iterate(
+                v.component.inlines,
+                v.component.headOption && showOptionLabels
+                  ? [`${getCircledLetter(v.component.headOption.value)} `]
+                  : []
+              ) + "\n"
+            );
             continue;
           case "Footnote":
             line.push(iterate(v.component.inlines) + "\n");
@@ -59,14 +72,14 @@ export function sanitize(document:WAML.Document, { showOptionLabels = false }:Sa
             continue;
         }
       }
-      if(isMooToken(v, 'medium')){
-        if(v.value.alt) line.push(`[${v.value.alt}]\n`);
+      if (isMooToken(v, "medium")) {
+        if (v.value.alt) line.push(`[${v.value.alt}]\n`);
         continue;
       }
-      switch(v.kind){
+      switch (v.kind) {
         case "ChoiceOption":
         case "ButtonOption":
-          if(showOptionLabels){
+          if (showOptionLabels) {
             line.push(getCircledLetter(v.value));
           }
           continue;
@@ -79,6 +92,6 @@ export function sanitize(document:WAML.Document, { showOptionLabels = false }:Sa
           continue;
       }
     }
-    return line.join('');
+    return line.join("");
   }
 }

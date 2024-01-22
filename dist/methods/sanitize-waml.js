@@ -9,7 +9,7 @@ export function sanitize(document, { showOptionLabels = false }) {
                 line.push(v);
                 continue;
             }
-            if (isMooToken(v, 'lineComment')) {
+            if (isMooToken(v, "lineComment")) {
                 continue;
             }
             if (hasKind(v, "XMLElement")) {
@@ -22,25 +22,30 @@ export function sanitize(document, { showOptionLabels = false }) {
                 if (v.component === null) {
                     continue;
                 }
-                if (isMooToken(v.component, 'longLingualOption')) {
+                if (isMooToken(v.component, "longLingualOption")) {
                     continue;
                 }
-                if (isMooToken(v.component, 'hr')) {
+                if (isMooToken(v.component, "hr")) {
                     continue;
                 }
                 switch (v.component.kind) {
-                    case "ClassedBlock": continue;
+                    case "ClassedBlock":
+                        continue;
                     case "Directive":
                         if (v.component.name === "answer") {
-                            for (const w of v.component.options) {
-                                if (w.kind !== "ShortLingualOption")
-                                    continue;
-                                line.push(w.value + "\n");
+                            if ("options" in v.component) {
+                                for (const w of v.component.options) {
+                                    if (w.kind !== "ShortLingualOption")
+                                        continue;
+                                    line.push(w.value + "\n");
+                                }
                             }
                         }
                         continue;
                     case "LineComponent":
-                        line.push(iterate(v.component.inlines, v.component.headOption && showOptionLabels ? [`${getCircledLetter(v.component.headOption.value)} `] : []) + "\n");
+                        line.push(iterate(v.component.inlines, v.component.headOption && showOptionLabels
+                            ? [`${getCircledLetter(v.component.headOption.value)} `]
+                            : []) + "\n");
                         continue;
                     case "Footnote":
                         line.push(iterate(v.component.inlines) + "\n");
@@ -50,7 +55,7 @@ export function sanitize(document, { showOptionLabels = false }) {
                         continue;
                 }
             }
-            if (isMooToken(v, 'medium')) {
+            if (isMooToken(v, "medium")) {
                 if (v.value.alt)
                     line.push(`[${v.value.alt}]\n`);
                 continue;
@@ -71,6 +76,6 @@ export function sanitize(document, { showOptionLabels = false }) {
                     continue;
             }
         }
-        return line.join('');
+        return line.join("");
     }
 }

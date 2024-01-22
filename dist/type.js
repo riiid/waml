@@ -5,6 +5,7 @@ export var WAML;
         InteractionType[InteractionType["CHOICE_OPTION"] = 0] = "CHOICE_OPTION";
         InteractionType[InteractionType["BUTTON_OPTION"] = 1] = "BUTTON_OPTION";
         InteractionType[InteractionType["SHORT_LINGUAL_OPTION"] = 2] = "SHORT_LINGUAL_OPTION";
+        InteractionType[InteractionType["PAIRING_NET"] = 3] = "PAIRING_NET";
     })(InteractionType = WAML.InteractionType || (WAML.InteractionType = {}));
     let ChoiceOptionGroup;
     (function (ChoiceOptionGroup) {

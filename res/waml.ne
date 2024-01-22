@@ -25,11 +25,11 @@
     longLingualOption: { match: /\{{3}.*?\}{3}/, value: chunk => chunk.slice(3, -3) },
     shortLingualOptionOpen: { match: /{{/, push: "option" },
     buttonBlank: { match: /{\[_{3,}\]}/, value: "default" },
-    buttonOptionOpen: { match: /{\[/, push: "objectiveOption" },
-    choiceOptionOpen: { match: /{/, push: "objectiveOption" },
+    buttonOptionOpen: { match: /{\[/, push: "singleButtonOption" },
+    choiceOptionOpen: { match: /{/, push: "singleChoiceOption" },
 
-    dAnswer: "@answer",
-    dPassage: "@passage",
+    dKVDirective: { match: /@(?:passage|answertype)\b/, value: chunk => chunk.slice(1) },
+    dAnswer: { match: "@answer", push: "answer" },
     sStrikethroughOpen: { match: /~~/, push: "sStrikethrough" },
     sUnderlineOpen: { match: /__/, push: "sUnderline" },
     sBoldOpen: { match: /\*\*/, push: "sBold" },
@@ -105,13 +105,44 @@
       }},
       ...omit(main, 'classClose')
     },
-    option: {
+    answer: {
+      pairingNetOpen: { match: /(?<=[\w가-힣]){\s*/, push: "pairingNet" },
+      shortLingualOptionOpen: { match: /{{/, push: "option" },
+      buttonOptionOpen: { match: /{\[/, push: "objectiveOption" },
+      choiceOptionOpen: { match: /{/, push: "objectiveOption" },
+      identifiable: textual.identifiable,
+      spaces: withoutXML.spaces
+    },
+    pairingNet: {
+      pairingNetItemOpen: { match: /{/, push: "pairingNetItem" },
+      arraySeparator: /\s*,\s*/,
+      pairingNetClose: { match: /\s*}\s*/, pop: 1 },
+      spaces: withoutXML.spaces
+    },
+    pairingNetItem: {
+      pairingNetItemArrow: /\s*->\s*/,
+      pairingNetItemClose: { match: /}/, pop: 1 },
+      identifiable: textual.identifiable,
+      spaces: withoutXML.spaces
+    },
+    option: { // 단답형
       escaping: withoutXML.escaping,
       shortLingualOptionClose: { match: /}}/, pop: 1 },
       shortLingualDefaultValue: { match: "=" },
       ...textual
     },
-    objectiveOption: {
+    singleButtonOption: { // @answer 이외
+      escaping: withoutXML.escaping,
+      buttonOptionClose: { match: /,?]}/, pop: 1 },
+      ...textual
+    },
+    singleChoiceOption: { // @answer 이외
+      escaping: withoutXML.escaping,
+      pairingSeparator: /\s*(?:->|=>|<-|<=)\s*/,
+      choiceOptionClose: { match: /,?}/, pop: 1 },
+      ...textual
+    },
+    objectiveOption: { // @answer 한정
       escaping: withoutXML.escaping,
       buttonOptionClose: { match: /,?]}/, pop: 1 },
       choiceOptionClose: { match: /,?}/, pop: 1 },
@@ -202,6 +233,7 @@ LineComponent  -> BlockMath                                             {% id %}
                   | Directive                                           {% id %}
                   | ClassedBlock                                        {% id %}
                   | FigureAddon                                         {% id %}
+                  | PairingCell Inline:+                                {% ([ cell, inlines ]) => ({ kind: "PairingOption", cell, inlines: trimArray(inlines) }) %}
                   | %longLingualOption                                  {% id %}
                   | %footnote Inline:+                                  {% ([ , inlines ]) => ({ kind: "Footnote", inlines: trimArray(inlines) }) %}
                   | %anchor Inline:+                                    {% ([ , inlines ]) => ({ kind: "Anchor", inlines: trimArray(inlines) }) %}
@@ -220,8 +252,8 @@ LineComponent  -> BlockMath                                             {% id %}
                                                                         }%}
                   | LineXMLElement                                      {% id %}
 FigureAddon    -> (%title | %caption) %spaces Inline:+                  {% ([ [{ type }],, inlines ]) => ({ kind: "FigureAddon", type, inlines: trimArray(inlines) }) %}
-Directive      -> %dAnswer %spaces InlineOption:+                       {% ([ ,, options ]) => ({ kind: "Directive", name: "answer", options }) %}
-                  | %dPassage %spaces Text:+                            {% ([ ,, path ]) => ({ kind: "Directive", name: "passage", path: path.join('') }) %}
+Directive      -> %dAnswer %spaces (InlineOption | PairingNet):+        {% ([ ,, options ]) => ({ kind: "Directive", name: "answer", options: options.map(v => v[0]) }) %}
+                  | %dKVDirective %spaces Text:+                        {% ([ token,, path ]) => ({ kind: "Directive", name: token.value, path: path.join('') }) %}
 Inline         -> InlineOption                                          {% id %}
                   | %buttonBlank                                        {% id %}
                   | %medium                                             {% id %}
@@ -302,8 +334,35 @@ ButtonOption   -> %buttonOptionOpen Text:+ OptionRest:? %buttonOptionClose {% ([
                                                                         }%}
 OptionRest     -> (%orderedOptionSeparator Text:+):+                    {% ([ list ]) => ({ kind: "OrderedOptionRest", value: list.map(v => v[1].join('')) }) %}
                   | (%unorderedOptionSeparator Text:+):+                {% ([ list ]) => ({ kind: "UnorderedOptionRest", value: list.map(v => v[1].join('')) }) %}
+PairingCell    -> %choiceOptionOpen %identifiable:+ (%pairingSeparator %identifiable:+):+ %choiceOptionClose {% ([ , first, rest ], _, reject) => {
+                                                                          const inbound = [];
+                                                                          const outbound = [];
+
+                                                                          for(const [ separator, names ] of rest){
+                                                                            const name = names.join('');
+
+                                                                            switch(separator.value.trim()){
+                                                                              case "->": outbound.push({ name, multiple: false }); break;
+                                                                              case "=>": outbound.push({ name, multiple: true }); break;
+                                                                              case "<-": inbound.push({ name, multiple: false }); break;
+                                                                              case "<=": inbound.push({ name, multiple: true }); break;
+                                                                              default: reject(); return;
+                                                                            }
+                                                                          }
+                                                                          return { kind: "PairingCell", value: first.join(''), inbound, outbound };
+                                                                        }%}
 ShortLingualOption -> %shortLingualOptionOpen %shortLingualDefaultValue:? Text:* %shortLingualOptionClose {% ([ , defaultValue, value ]) => ({
                                                                           kind: "ShortLingualOption",
                                                                           value: value.join(''),
                                                                           defaultValue: Boolean(defaultValue)
+                                                                        })%}
+PairingNet     -> %identifiable:+ %pairingNetOpen Array[PairingNetItem, %arraySeparator] %pairingNetClose {% ([ name,, list ]) => ({
+                                                                          kind: "PairingNet",
+                                                                          name: name.join(''),
+                                                                          list
+                                                                        })%}
+PairingNetItem -> %pairingNetItemOpen %spaces:? %identifiable:+ %pairingNetItemArrow %identifiable:+ %spaces:? %pairingNetItemClose {% ([ ,, from,, to ]) => ({
+                                                                          kind: "PairingNetItem",
+                                                                          from: from.join(''),
+                                                                          to: to.join('')
                                                                         })%}
