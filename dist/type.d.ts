@@ -72,9 +72,9 @@ export declare namespace WAML {
     };
     export type LineComponent = Math<false> | Directive | ClassedBlock | FigureAddon | PairingOption | MooToken<"longLingualOption"> | MooToken<"hr"> | Footnote | Anchor | {
         kind: "LineComponent";
-        headOption?: ChoiceOption | ShortLingualOption;
+        headOption?: ChoiceOption;
         inlines: Inline[];
-    } | LineXMLElement | null;
+    } | ShortLingualOption | LineXMLElement | null;
     export type Inline = InlineOption | MooToken<"medium"> | Math<true> | StyledInline | ClassedInline | string;
     export type Options = Array<AnswerFormOf<InlineOption> | PairingNet>;
     export type InlineOption = ChoiceOption | ButtonOption | ShortLingualOption;

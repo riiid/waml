@@ -91,9 +91,10 @@ export namespace WAML {
     | Anchor
     | {
         kind: "LineComponent";
-        headOption?: ChoiceOption | ShortLingualOption;
+        headOption?: ChoiceOption;
         inlines: Inline[];
       }
+    | ShortLingualOption
     | LineXMLElement
     | null;
   export type Inline =

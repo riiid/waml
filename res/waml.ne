@@ -241,11 +241,9 @@ LineComponent  -> BlockMath                                             {% id %}
                   | Inline:+                                            {% ([ inlines ], _, reject) => {
                                                                           if(PREFIXES.includes(inlines[0])) return reject;
                                                                           if(FIGURE_ADDONS.includes(inlines[0])) return reject;
+                                                                          if(inlines.length === 1 && inlines[0].kind === "ShortLingualOption") return inlines[0];
 
-                                                                          const promotable = inlines[0]?.kind === "ChoiceOption"
-                                                                            || (inlines[0]?.kind === "ShortLingualOption" && inlines.length === 1)
-                                                                          ;
-                                                                          if(promotable){
+                                                                          if(inlines[0]?.kind === "ChoiceOption"){
                                                                             return { kind: "LineComponent", headOption: inlines[0], inlines: trimArray(inlines.slice(1)) };
                                                                           }
                                                                           return { kind: "LineComponent", inlines };

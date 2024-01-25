@@ -110,15 +110,14 @@ export function getAnswerFormat(
         case "ChoiceOption":
           handleChoiceOption(v.component.headOption.value);
           break;
-        case "ShortLingualOption":
-          iterate([v.component.headOption]);
-          break;
         default:
           throw Error(
             `Unhandled headOption: ${(v.component.headOption as any)["kind"]}`
           );
       }
       iterate(v.component.inlines);
+    } else if (hasKind(v.component, "ShortLingualOption")) {
+      iterate([v.component]);
     }
   }
   return { interactions };
