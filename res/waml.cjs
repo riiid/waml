@@ -282,7 +282,7 @@ var grammar = {
     {"name": "Directive", "symbols": [(lexer.has("dAnswer") ? {type: "dAnswer"} : dAnswer), (lexer.has("spaces") ? {type: "spaces"} : spaces), "Directive$ebnf$1"], "postprocess": ([ ,, options ]) => ({ kind: "Directive", name: "answer", options: options.map(v => v[0]) })},
     {"name": "Directive$ebnf$2", "symbols": ["Text"]},
     {"name": "Directive$ebnf$2", "symbols": ["Directive$ebnf$2", "Text"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "Directive", "symbols": [(lexer.has("dKVDirective") ? {type: "dKVDirective"} : dKVDirective), (lexer.has("spaces") ? {type: "spaces"} : spaces), "Directive$ebnf$2"], "postprocess": ([ token,, path ]) => ({ kind: "Directive", name: token.value, path: path.join('') })},
+    {"name": "Directive", "symbols": [(lexer.has("dKVDirective") ? {type: "dKVDirective"} : dKVDirective), (lexer.has("spaces") ? {type: "spaces"} : spaces), "Directive$ebnf$2"], "postprocess": ([ token,, path ]) => ({ kind: "Directive", name: token.value, value: path.join('') })},
     {"name": "Inline", "symbols": ["InlineOption"], "postprocess": id},
     {"name": "Inline", "symbols": [(lexer.has("buttonBlank") ? {type: "buttonBlank"} : buttonBlank)], "postprocess": id},
     {"name": "Inline", "symbols": [(lexer.has("medium") ? {type: "medium"} : medium)], "postprocess": id},

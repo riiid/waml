@@ -252,7 +252,7 @@ LineComponent  -> BlockMath                                             {% id %}
                   | LineXMLElement                                      {% id %}
 FigureAddon    -> (%title | %caption) %spaces Inline:+                  {% ([ [{ type }],, inlines ]) => ({ kind: "FigureAddon", type, inlines: trimArray(inlines) }) %}
 Directive      -> %dAnswer %spaces (InlineOption | PairingNet):+        {% ([ ,, options ]) => ({ kind: "Directive", name: "answer", options: options.map(v => v[0]) }) %}
-                  | %dKVDirective %spaces Text:+                        {% ([ token,, path ]) => ({ kind: "Directive", name: token.value, path: path.join('') }) %}
+                  | %dKVDirective %spaces Text:+                        {% ([ token,, path ]) => ({ kind: "Directive", name: token.value, value: path.join('') }) %}
 Inline         -> InlineOption                                          {% id %}
                   | %buttonBlank                                        {% id %}
                   | %medium                                             {% id %}

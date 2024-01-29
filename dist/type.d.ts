@@ -141,7 +141,11 @@ export declare namespace WAML {
     } | {
         kind: "Directive";
         name: "passage";
-        path: string;
+        value: string;
+    } | {
+        kind: "Directive";
+        name: "answertype";
+        value: string;
     };
     export type Math<I extends boolean> = {
         kind: "Math";

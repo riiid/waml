@@ -8,7 +8,7 @@ export declare class WAMLDocument {
     findReferences(): (({
         kind: "Directive";
         name: "passage";
-        path: string;
+        value: string;
     } & {
         name: "passage";
     }) | {
