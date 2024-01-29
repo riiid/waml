@@ -111,12 +111,13 @@
       buttonOptionOpen: { match: /{\[/, push: "objectiveOption" },
       choiceOptionOpen: { match: /{/, push: "objectiveOption" },
       identifiable: textual.identifiable,
+      lineBreak: { ...withoutXML.lineBreak, pop: 1 },
       spaces: withoutXML.spaces
     },
     pairingNet: {
       pairingNetItemOpen: { match: /{/, push: "pairingNetItem" },
       arraySeparator: /\s*,\s*/,
-      pairingNetClose: { match: /\s*}\s*/, pop: 1 },
+      pairingNetClose: { match: /\s*}\s*?/, pop: 1 },
       spaces: withoutXML.spaces
     },
     pairingNetItem: {
