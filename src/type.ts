@@ -136,6 +136,7 @@ export namespace WAML {
   export type PairingOption = {
     kind: "PairingOption";
     cell: PairingCell;
+    inlines: Inline[];
   };
   export type PairingCell = {
     kind: "PairingCell";
