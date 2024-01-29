@@ -74,8 +74,8 @@ export declare namespace WAML {
         kind: "LineComponent";
         headOption?: ChoiceOption;
         inlines: Inline[];
-    } | ShortLingualOption | LineXMLElement | null;
-    export type Inline = InlineOption | MooToken<"medium"> | Math<true> | StyledInline | ClassedInline | string;
+    } | ShortLingualOption | null;
+    export type Inline = InlineOption | MooToken<"medium"> | Math<true> | StyledInline | ClassedInline | LineXMLElement | string;
     export type Options = Array<AnswerFormOf<InlineOption> | PairingNet>;
     export type InlineOption = ChoiceOption | ButtonOption | ShortLingualOption;
     export type ChoiceOption = ObjectiveOption<"ChoiceOption">;

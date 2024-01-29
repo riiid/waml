@@ -95,7 +95,6 @@ export namespace WAML {
         inlines: Inline[];
       }
     | ShortLingualOption
-    | LineXMLElement
     | null;
   export type Inline =
     | InlineOption
@@ -103,6 +102,7 @@ export namespace WAML {
     | Math<true>
     | StyledInline
     | ClassedInline
+    | LineXMLElement
     | string;
   export type Options = Array<AnswerFormOf<InlineOption> | PairingNet>;
   export type InlineOption = ChoiceOption | ButtonOption | ShortLingualOption;

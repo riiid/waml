@@ -213,7 +213,7 @@
 
 Array[X, D]    -> $X ($D $X):*                                          {% ([ first, rest ]) => [ first[0], ...rest.map(v => v[1][0]) ] %}
 VoidElement[O, B, C] -> %spaces:? $O $B $C                              {% ([ , open, body ]) => ({ tag: open[0].value, body: body[0] }) %}
-Element[O, B, C] -> %spaces:* $O XMLAttribute:* %spaces:? %tagClose $B $C {% ([ , open, attributes,,, body ]) => ({
+Element[O, B, C] -> $O XMLAttribute:* %spaces:? %tagClose $B $C         {% ([ open, attributes,,, body ]) => ({
                                                                           tag: open[0].value,
                                                                           attributes,
                                                                           body: body[0]
@@ -249,7 +249,6 @@ LineComponent  -> BlockMath                                             {% id %}
                                                                           }
                                                                           return { kind: "LineComponent", inlines };
                                                                         }%}
-                  | LineXMLElement                                      {% id %}
 FigureAddon    -> (%title | %caption) %spaces Inline:+                  {% ([ [{ type }],, inlines ]) => ({ kind: "FigureAddon", type, inlines: trimArray(inlines) }) %}
 Directive      -> %dAnswer %spaces (InlineOption | PairingNet):+        {% ([ ,, options ]) => ({ kind: "Directive", name: "answer", options: options.map(v => v[0]) }) %}
                   | %dKVDirective %spaces Text:+                        {% ([ token,, path ]) => ({ kind: "Directive", name: token.value, value: path.join('') }) %}
@@ -261,6 +260,7 @@ Inline         -> InlineOption                                          {% id %}
                   | Text                                                {% id %}
                   | StyledInline                                        {% id %}
                   | ClassedInline                                       {% id %}
+                  | LineXMLElement                                      {% id %}
 Text           -> %identifiable                                         {% ([ token ]) => token.value %}
                   | %title                                              {% ([ token ]) => token.value %}
                   | %caption                                            {% ([ token ]) => token.value %}
