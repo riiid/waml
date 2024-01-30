@@ -84,7 +84,6 @@ export namespace WAML {
     | Directive
     | ClassedBlock
     | FigureAddon
-    | PairingOption
     | MooToken<"longLingualOption">
     | MooToken<"hr">
     | Footnote
@@ -200,12 +199,18 @@ export namespace WAML {
     key: string;
     value: string;
   };
-  export type LineXMLElement = {
-    kind: "XMLElement";
-    tag: "table";
-    attributes: XMLAttribute[];
-    content: Array<TableCell | MooToken<"rowSeparator">>;
-  };
+  export type LineXMLElement =
+    | {
+        kind: "XMLElement";
+        tag: "table";
+        attributes: XMLAttribute[];
+        content: Array<TableCell | MooToken<"rowSeparator">>;
+      }
+    | {
+        kind: "XMLElement";
+        tag: "pog";
+        content: PairingOption[];
+      };
   export type TableCell = {
     kind: "Cell";
     prefix?: string;

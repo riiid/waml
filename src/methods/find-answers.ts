@@ -75,73 +75,86 @@ export function getAnswerFormat(
   > = {};
 
   for (const v of document) {
-    if (typeof v === "string" || !hasKind(v, "Line")) continue;
-    if (hasKind(v.component, "PairingOption")) {
-      for (const w of v.component.cell.inbound) {
-        const group =
-          existingPairingNetGroup[w.name] ||
-          (existingPairingNetGroup[w.name] = {
-            type: WAML.InteractionType.PAIRING_NET,
-            index: interactions.length,
-            name: w.name,
-            fromValues: [],
-            toValues: [],
-          });
-        if (group.index === interactions.length) interactions.push(group);
-        group.toValues.push(v.component.cell.value);
+    if (typeof v === "string" || !hasKind(v, "Line") || !v.component) continue;
+    if (hasKind(v.component, "LineComponent") && v.component.headOption) {
+      handleChoiceOption(v.component.headOption.value);
+    }
+    if (hasKind(v.component, "ShortLingualOption")) {
+      checkInline(v.component);
+    }
+    if ("inlines" in v.component) {
+      for (const w of iterate(v.component.inlines)) {
+        checkInline(w);
       }
-      for (const w of v.component.cell.outbound) {
-        const group =
-          existingPairingNetGroup[w.name] ||
-          (existingPairingNetGroup[w.name] = {
-            type: WAML.InteractionType.PAIRING_NET,
-            index: interactions.length,
-            name: w.name,
-            fromValues: [],
-            toValues: [],
-          });
-        if (group.index === interactions.length) interactions.push(group);
-        group.fromValues.push(v.component.cell.value);
-      }
-    } else if (hasKind(v.component, "LineComponent")) {
-      switch (v.component.headOption?.kind) {
-        case undefined:
-          break;
-        case "ChoiceOption":
-          handleChoiceOption(v.component.headOption.value);
-          break;
-        default:
-          throw Error(
-            `Unhandled headOption: ${(v.component.headOption as any)["kind"]}`
-          );
-      }
-      iterate(v.component.inlines);
-    } else if (hasKind(v.component, "ShortLingualOption")) {
-      iterate([v.component]);
     }
   }
   return { interactions };
 
-  function iterate(inlines: WAML.Inline[]): void {
+  function* iterate(inlines: WAML.Inline[]): Generator<WAML.Inline> {
     for (const v of inlines) {
+      yield v;
       if (typeof v === "string") continue;
-      if (isMooToken(v, "buttonBlank")) {
-        handleButtonOption("");
+      if (hasKind(v, "XMLElement") && v.tag === "pog") {
+        for (const w of v.content) {
+          yield* iterate(w.inlines);
+        }
         continue;
       }
-      if (hasKind(v, "StyledInline") || hasKind(v, "ClassedInline")) {
-        iterate(v.inlines);
-      } else if (hasKind(v, "ChoiceOption")) {
-        handleChoiceOption(v.value);
-      } else if (hasKind(v, "ButtonOption")) {
-        handleButtonOption(v.value);
-      } else if (hasKind(v, "ShortLingualOption")) {
-        interactions.push({
-          index: interactions.length,
-          type: WAML.InteractionType.SHORT_LINGUAL_OPTION,
-          placeholder: v.value,
-        });
+      if ("inlines" in v) {
+        yield* iterate(v.inlines);
       }
+    }
+  }
+  function checkInline(inline: WAML.Inline): void {
+    if (typeof inline === "string") return;
+    if (isMooToken(inline, "buttonBlank")) {
+      handleButtonOption("");
+      return;
+    }
+    if (hasKind(inline, "XMLElement") && inline.tag === "pog") {
+      for (const v of inline.content) {
+        for (const w of v.cell.inbound) {
+          const group =
+            existingPairingNetGroup[w.name] ||
+            (existingPairingNetGroup[w.name] = {
+              type: WAML.InteractionType.PAIRING_NET,
+              index: interactions.length,
+              name: w.name,
+              fromValues: [],
+              toValues: [],
+            });
+          if (group.index === interactions.length) interactions.push(group);
+          group.toValues.push(v.cell.value);
+        }
+        for (const x of v.cell.outbound) {
+          const group =
+            existingPairingNetGroup[x.name] ||
+            (existingPairingNetGroup[x.name] = {
+              type: WAML.InteractionType.PAIRING_NET,
+              index: interactions.length,
+              name: x.name,
+              fromValues: [],
+              toValues: [],
+            });
+          if (group.index === interactions.length) interactions.push(group);
+          group.fromValues.push(v.cell.value);
+        }
+      }
+    } else if (
+      hasKind(inline, "StyledInline") ||
+      hasKind(inline, "ClassedInline")
+    ) {
+      for (const v of inline.inlines) checkInline(v);
+    } else if (hasKind(inline, "ChoiceOption")) {
+      handleChoiceOption(inline.value);
+    } else if (hasKind(inline, "ButtonOption")) {
+      handleButtonOption(inline.value);
+    } else if (hasKind(inline, "ShortLingualOption")) {
+      interactions.push({
+        index: interactions.length,
+        type: WAML.InteractionType.SHORT_LINGUAL_OPTION,
+        placeholder: inline.value,
+      });
     }
   }
   function handleChoiceOption(value: string): void {

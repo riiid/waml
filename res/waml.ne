@@ -27,6 +27,7 @@
     buttonBlank: { match: /{\[_{3,}\]}/, value: "default" },
     buttonOptionOpen: { match: /{\[/, push: "singleButtonOption" },
     choiceOptionOpen: { match: /{/, push: "singleChoiceOption" },
+    pairingOptionGroupOpen: { match: /<pog>/ },
 
     dKVDirective: { match: /@(?:passage|answertype)\b/, value: chunk => chunk.slice(1) },
     dAnswer: { match: "@answer", push: "answer" },
@@ -56,6 +57,7 @@
   const main = {
     xStyleOpen: { match: /<style>\s*/, push: "xStyle", value: () => "style" },
     xExplanationOpen: { match: /<explanation>\s*/, push: "xExplanation", value: () => "explanation" },
+    xPOGOpen: { match: /<pog>\s*/, push: "xPOG", value: () => "pog" },
     xTableOpen: { match: /<table/, push: "xTableOpening", value: () => "table" },
     ...withoutXML
   };
@@ -75,6 +77,10 @@
     xExplanation: {
       xExplanationClose: { match: /\s*<\/explanation>/, pop: 1 },
       xTableOpen: main.xTableOpen,
+      ...withoutXML
+    },
+    xPOG: {
+      xPOGClose: { match: /\s*<\/pog>/, pop: 1 },
       ...withoutXML
     },
     xTableOpening: {
@@ -212,7 +218,7 @@
 @lexer lexer
 
 Array[X, D]    -> $X ($D $X):*                                          {% ([ first, rest ]) => [ first[0], ...rest.map(v => v[1][0]) ] %}
-VoidElement[O, B, C] -> %spaces:? $O $B $C                              {% ([ , open, body ]) => ({ tag: open[0].value, body: body[0] }) %}
+VoidElement[O, B, C] -> $O $B $C                                        {% ([ open, body ]) => ({ tag: open[0].value, body: body[0] }) %}
 Element[O, B, C] -> $O XMLAttribute:* %spaces:? %tagClose $B $C         {% ([ open, attributes,,, body ]) => ({
                                                                           tag: open[0].value,
                                                                           attributes,
@@ -234,7 +240,6 @@ LineComponent  -> BlockMath                                             {% id %}
                   | Directive                                           {% id %}
                   | ClassedBlock                                        {% id %}
                   | FigureAddon                                         {% id %}
-                  | PairingCell Inline:+                                {% ([ cell, inlines ]) => ({ kind: "PairingOption", cell, inlines: trimArray(inlines) }) %}
                   | %longLingualOption                                  {% id %}
                   | %footnote Inline:+                                  {% ([ , inlines ]) => ({ kind: "Footnote", inlines: trimArray(inlines) }) %}
                   | %anchor Inline:+                                    {% ([ , inlines ]) => ({ kind: "Anchor", inlines: trimArray(inlines) }) %}
@@ -276,7 +281,8 @@ ClassedInline  -> %classOpen %identifiable:+ ":" Inline:* %classClose   {% ([ , 
 
 XMLElement     -> VoidElement[%xStyleOpen, %any:*, %xStyleClose]        {% ([{ tag, body }]) => ({ kind: "XMLElement", tag, content: mergeValue(body) }) %}
                   | VoidElement[%xExplanationOpen, Main, %xExplanationClose] {% ([{ tag, body }]) => ({ kind: "XMLElement", tag, content: body }) %} 
-LineXMLElement -> Element[%xTableOpen, Table, %xTableClose]             {% ([{ tag, attributes, body }]) => ({ kind: "XMLElement", tag, attributes, content: body }) %} 
+LineXMLElement -> Element[%xTableOpen, Table, %xTableClose]             {% ([{ tag, attributes, body }]) => ({ kind: "XMLElement", tag, attributes, content: body }) %}
+                  | VoidElement[%xPOGOpen, Array[PairingOption, %lineBreak], %xPOGClose] {% ([{ tag, body }]) => ({ kind: "XMLElement", tag, content: body }) %}
 XMLAttribute   -> %spaces %identifiable:+ "=" "\"" Text:* "\""          {% ([ , key,,, value ]) => ({ kind: "XMLAttribute", key: mergeValue(key), value: value.join('') }) %}
 BlockMath      -> %blockMathOpen %any:+ %blockMathClose                 {% ([ , content ]) => ({ kind: "Math", inline: false, content: mergeValue(content) }) %}
 InlineMath     -> %inlineMathOpen %any:+ %inlineMathClose               {% ([ , content ]) => ({ kind: "Math", inline: true, content: mergeValue(content) }) %}
@@ -333,6 +339,7 @@ ButtonOption   -> %buttonOptionOpen Text:+ OptionRest:? %buttonOptionClose {% ([
                                                                         }%}
 OptionRest     -> (%orderedOptionSeparator Text:+):+                    {% ([ list ]) => ({ kind: "OrderedOptionRest", value: list.map(v => v[1].join('')) }) %}
                   | (%unorderedOptionSeparator Text:+):+                {% ([ list ]) => ({ kind: "UnorderedOptionRest", value: list.map(v => v[1].join('')) }) %}
+PairingOption  -> PairingCell Inline:+                                  {% ([ cell, inlines ]) => ({ kind: "PairingOption", cell, inlines: trimArray(inlines) }) %}
 PairingCell    -> %choiceOptionOpen %identifiable:+ (%pairingSeparator %identifiable:+):+ %choiceOptionClose {% ([ , first, rest ], _, reject) => {
                                                                           const inbound = [];
                                                                           const outbound = [];

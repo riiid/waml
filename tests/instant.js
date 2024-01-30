@@ -1,10 +1,8 @@
 import { WAMLDocument } from "../dist/document.js";
 
 const content = `
-{1} <table>
-[a][b]
-</table>
+Hello, World!
 `;
 const document = new WAMLDocument(content);
 
-console.log(JSON.stringify(document.raw));
+console.log(JSON.stringify(document.metadata.answerFormat));

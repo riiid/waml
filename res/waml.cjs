@@ -31,6 +31,7 @@ function id(x) { return x[0]; }
     buttonBlank: { match: /{\[_{3,}\]}/, value: "default" },
     buttonOptionOpen: { match: /{\[/, push: "singleButtonOption" },
     choiceOptionOpen: { match: /{/, push: "singleChoiceOption" },
+    pairingOptionGroupOpen: { match: /<pog>/ },
 
     dKVDirective: { match: /@(?:passage|answertype)\b/, value: chunk => chunk.slice(1) },
     dAnswer: { match: "@answer", push: "answer" },
@@ -60,6 +61,7 @@ function id(x) { return x[0]; }
   const main = {
     xStyleOpen: { match: /<style>\s*/, push: "xStyle", value: () => "style" },
     xExplanationOpen: { match: /<explanation>\s*/, push: "xExplanation", value: () => "explanation" },
+    xPOGOpen: { match: /<pog>\s*/, push: "xPOG", value: () => "pog" },
     xTableOpen: { match: /<table/, push: "xTableOpening", value: () => "table" },
     ...withoutXML
   };
@@ -79,6 +81,10 @@ function id(x) { return x[0]; }
     xExplanation: {
       xExplanationClose: { match: /\s*<\/explanation>/, pop: 1 },
       xTableOpen: main.xTableOpen,
+      ...withoutXML
+    },
+    xPOG: {
+      xPOGClose: { match: /\s*<\/pog>/, pop: 1 },
       ...withoutXML
     },
     xTableOpening: {
@@ -244,20 +250,17 @@ var grammar = {
     {"name": "LineComponent", "symbols": ["Directive"], "postprocess": id},
     {"name": "LineComponent", "symbols": ["ClassedBlock"], "postprocess": id},
     {"name": "LineComponent", "symbols": ["FigureAddon"], "postprocess": id},
+    {"name": "LineComponent", "symbols": [(lexer.has("longLingualOption") ? {type: "longLingualOption"} : longLingualOption)], "postprocess": id},
     {"name": "LineComponent$ebnf$1", "symbols": ["Inline"]},
     {"name": "LineComponent$ebnf$1", "symbols": ["LineComponent$ebnf$1", "Inline"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "LineComponent", "symbols": ["PairingCell", "LineComponent$ebnf$1"], "postprocess": ([ cell, inlines ]) => ({ kind: "PairingOption", cell, inlines: trimArray(inlines) })},
-    {"name": "LineComponent", "symbols": [(lexer.has("longLingualOption") ? {type: "longLingualOption"} : longLingualOption)], "postprocess": id},
+    {"name": "LineComponent", "symbols": [(lexer.has("footnote") ? {type: "footnote"} : footnote), "LineComponent$ebnf$1"], "postprocess": ([ , inlines ]) => ({ kind: "Footnote", inlines: trimArray(inlines) })},
     {"name": "LineComponent$ebnf$2", "symbols": ["Inline"]},
     {"name": "LineComponent$ebnf$2", "symbols": ["LineComponent$ebnf$2", "Inline"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "LineComponent", "symbols": [(lexer.has("footnote") ? {type: "footnote"} : footnote), "LineComponent$ebnf$2"], "postprocess": ([ , inlines ]) => ({ kind: "Footnote", inlines: trimArray(inlines) })},
+    {"name": "LineComponent", "symbols": [(lexer.has("anchor") ? {type: "anchor"} : anchor), "LineComponent$ebnf$2"], "postprocess": ([ , inlines ]) => ({ kind: "Anchor", inlines: trimArray(inlines) })},
+    {"name": "LineComponent", "symbols": [(lexer.has("hr") ? {type: "hr"} : hr)], "postprocess": id},
     {"name": "LineComponent$ebnf$3", "symbols": ["Inline"]},
     {"name": "LineComponent$ebnf$3", "symbols": ["LineComponent$ebnf$3", "Inline"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "LineComponent", "symbols": [(lexer.has("anchor") ? {type: "anchor"} : anchor), "LineComponent$ebnf$3"], "postprocess": ([ , inlines ]) => ({ kind: "Anchor", inlines: trimArray(inlines) })},
-    {"name": "LineComponent", "symbols": [(lexer.has("hr") ? {type: "hr"} : hr)], "postprocess": id},
-    {"name": "LineComponent$ebnf$4", "symbols": ["Inline"]},
-    {"name": "LineComponent$ebnf$4", "symbols": ["LineComponent$ebnf$4", "Inline"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "LineComponent", "symbols": ["LineComponent$ebnf$4"], "postprocess":  ([ inlines ], _, reject) => {
+    {"name": "LineComponent", "symbols": ["LineComponent$ebnf$3"], "postprocess":  ([ inlines ], _, reject) => {
           if(PREFIXES.includes(inlines[0])) return reject;
           if(FIGURE_ADDONS.includes(inlines[0])) return reject;
           if(inlines.length === 1 && inlines[0].kind === "ShortLingualOption") return inlines[0];
@@ -322,16 +325,12 @@ var grammar = {
     {"name": "XMLElement$macrocall$3$ebnf$1", "symbols": ["XMLElement$macrocall$3$ebnf$1", (lexer.has("any") ? {type: "any"} : any)], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "XMLElement$macrocall$3", "symbols": ["XMLElement$macrocall$3$ebnf$1"]},
     {"name": "XMLElement$macrocall$4", "symbols": [(lexer.has("xStyleClose") ? {type: "xStyleClose"} : xStyleClose)]},
-    {"name": "XMLElement$macrocall$1$ebnf$1", "symbols": [(lexer.has("spaces") ? {type: "spaces"} : spaces)], "postprocess": id},
-    {"name": "XMLElement$macrocall$1$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
-    {"name": "XMLElement$macrocall$1", "symbols": ["XMLElement$macrocall$1$ebnf$1", "XMLElement$macrocall$2", "XMLElement$macrocall$3", "XMLElement$macrocall$4"], "postprocess": ([ , open, body ]) => ({ tag: open[0].value, body: body[0] })},
+    {"name": "XMLElement$macrocall$1", "symbols": ["XMLElement$macrocall$2", "XMLElement$macrocall$3", "XMLElement$macrocall$4"], "postprocess": ([ open, body ]) => ({ tag: open[0].value, body: body[0] })},
     {"name": "XMLElement", "symbols": ["XMLElement$macrocall$1"], "postprocess": ([{ tag, body }]) => ({ kind: "XMLElement", tag, content: mergeValue(body) })},
     {"name": "XMLElement$macrocall$6", "symbols": [(lexer.has("xExplanationOpen") ? {type: "xExplanationOpen"} : xExplanationOpen)]},
     {"name": "XMLElement$macrocall$7", "symbols": ["Main"]},
     {"name": "XMLElement$macrocall$8", "symbols": [(lexer.has("xExplanationClose") ? {type: "xExplanationClose"} : xExplanationClose)]},
-    {"name": "XMLElement$macrocall$5$ebnf$1", "symbols": [(lexer.has("spaces") ? {type: "spaces"} : spaces)], "postprocess": id},
-    {"name": "XMLElement$macrocall$5$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
-    {"name": "XMLElement$macrocall$5", "symbols": ["XMLElement$macrocall$5$ebnf$1", "XMLElement$macrocall$6", "XMLElement$macrocall$7", "XMLElement$macrocall$8"], "postprocess": ([ , open, body ]) => ({ tag: open[0].value, body: body[0] })},
+    {"name": "XMLElement$macrocall$5", "symbols": ["XMLElement$macrocall$6", "XMLElement$macrocall$7", "XMLElement$macrocall$8"], "postprocess": ([ open, body ]) => ({ tag: open[0].value, body: body[0] })},
     {"name": "XMLElement", "symbols": ["XMLElement$macrocall$5"], "postprocess": ([{ tag, body }]) => ({ kind: "XMLElement", tag, content: body })},
     {"name": "LineXMLElement$macrocall$2", "symbols": [(lexer.has("xTableOpen") ? {type: "xTableOpen"} : xTableOpen)]},
     {"name": "LineXMLElement$macrocall$3", "symbols": ["Table"]},
@@ -346,6 +345,17 @@ var grammar = {
           body: body[0]
         })},
     {"name": "LineXMLElement", "symbols": ["LineXMLElement$macrocall$1"], "postprocess": ([{ tag, attributes, body }]) => ({ kind: "XMLElement", tag, attributes, content: body })},
+    {"name": "LineXMLElement$macrocall$6", "symbols": [(lexer.has("xPOGOpen") ? {type: "xPOGOpen"} : xPOGOpen)]},
+    {"name": "LineXMLElement$macrocall$7$macrocall$2", "symbols": ["PairingOption"]},
+    {"name": "LineXMLElement$macrocall$7$macrocall$3", "symbols": [(lexer.has("lineBreak") ? {type: "lineBreak"} : lineBreak)]},
+    {"name": "LineXMLElement$macrocall$7$macrocall$1$ebnf$1", "symbols": []},
+    {"name": "LineXMLElement$macrocall$7$macrocall$1$ebnf$1$subexpression$1", "symbols": ["LineXMLElement$macrocall$7$macrocall$3", "LineXMLElement$macrocall$7$macrocall$2"]},
+    {"name": "LineXMLElement$macrocall$7$macrocall$1$ebnf$1", "symbols": ["LineXMLElement$macrocall$7$macrocall$1$ebnf$1", "LineXMLElement$macrocall$7$macrocall$1$ebnf$1$subexpression$1"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "LineXMLElement$macrocall$7$macrocall$1", "symbols": ["LineXMLElement$macrocall$7$macrocall$2", "LineXMLElement$macrocall$7$macrocall$1$ebnf$1"], "postprocess": ([ first, rest ]) => [ first[0], ...rest.map(v => v[1][0]) ]},
+    {"name": "LineXMLElement$macrocall$7", "symbols": ["LineXMLElement$macrocall$7$macrocall$1"]},
+    {"name": "LineXMLElement$macrocall$8", "symbols": [(lexer.has("xPOGClose") ? {type: "xPOGClose"} : xPOGClose)]},
+    {"name": "LineXMLElement$macrocall$5", "symbols": ["LineXMLElement$macrocall$6", "LineXMLElement$macrocall$7", "LineXMLElement$macrocall$8"], "postprocess": ([ open, body ]) => ({ tag: open[0].value, body: body[0] })},
+    {"name": "LineXMLElement", "symbols": ["LineXMLElement$macrocall$5"], "postprocess": ([{ tag, body }]) => ({ kind: "XMLElement", tag, content: body })},
     {"name": "XMLAttribute$ebnf$1", "symbols": [(lexer.has("identifiable") ? {type: "identifiable"} : identifiable)]},
     {"name": "XMLAttribute$ebnf$1", "symbols": ["XMLAttribute$ebnf$1", (lexer.has("identifiable") ? {type: "identifiable"} : identifiable)], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "XMLAttribute$ebnf$2", "symbols": []},
@@ -436,6 +446,9 @@ var grammar = {
     {"name": "OptionRest$ebnf$2$subexpression$2", "symbols": [(lexer.has("unorderedOptionSeparator") ? {type: "unorderedOptionSeparator"} : unorderedOptionSeparator), "OptionRest$ebnf$2$subexpression$2$ebnf$1"]},
     {"name": "OptionRest$ebnf$2", "symbols": ["OptionRest$ebnf$2", "OptionRest$ebnf$2$subexpression$2"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "OptionRest", "symbols": ["OptionRest$ebnf$2"], "postprocess": ([ list ]) => ({ kind: "UnorderedOptionRest", value: list.map(v => v[1].join('')) })},
+    {"name": "PairingOption$ebnf$1", "symbols": ["Inline"]},
+    {"name": "PairingOption$ebnf$1", "symbols": ["PairingOption$ebnf$1", "Inline"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "PairingOption", "symbols": ["PairingCell", "PairingOption$ebnf$1"], "postprocess": ([ cell, inlines ]) => ({ kind: "PairingOption", cell, inlines: trimArray(inlines) })},
     {"name": "PairingCell$ebnf$1", "symbols": [(lexer.has("identifiable") ? {type: "identifiable"} : identifiable)]},
     {"name": "PairingCell$ebnf$1", "symbols": ["PairingCell$ebnf$1", (lexer.has("identifiable") ? {type: "identifiable"} : identifiable)], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "PairingCell$ebnf$2$subexpression$1$ebnf$1", "symbols": [(lexer.has("identifiable") ? {type: "identifiable"} : identifiable)]},

@@ -70,7 +70,7 @@ export declare namespace WAML {
         prefixes: Array<MooToken<"prefix">>;
         component: LineComponent;
     };
-    export type LineComponent = Math<false> | Directive | ClassedBlock | FigureAddon | PairingOption | MooToken<"longLingualOption"> | MooToken<"hr"> | Footnote | Anchor | {
+    export type LineComponent = Math<false> | Directive | ClassedBlock | FigureAddon | MooToken<"longLingualOption"> | MooToken<"hr"> | Footnote | Anchor | {
         kind: "LineComponent";
         headOption?: ChoiceOption;
         inlines: Inline[];
@@ -172,6 +172,10 @@ export declare namespace WAML {
         tag: "table";
         attributes: XMLAttribute[];
         content: Array<TableCell | MooToken<"rowSeparator">>;
+    } | {
+        kind: "XMLElement";
+        tag: "pog";
+        content: PairingOption[];
     };
     export type TableCell = {
         kind: "Cell";
