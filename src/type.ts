@@ -3,6 +3,7 @@ export namespace WAML {
     CHOICE_OPTION,
     BUTTON_OPTION,
     SHORT_LINGUAL_OPTION,
+    LONG_LINGUAL_OPTION,
     PAIRING_NET,
   }
   export enum ChoiceOptionGroup {
@@ -59,6 +60,10 @@ export namespace WAML {
       }
     | {
         type: InteractionType.SHORT_LINGUAL_OPTION;
+        placeholder: string;
+      }
+    | {
+        type: InteractionType.LONG_LINGUAL_OPTION;
         placeholder: string;
       }
     | {

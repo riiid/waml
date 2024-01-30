@@ -56,6 +56,14 @@ export function getAnswerFormat(document, answer) {
     for (const v of document) {
         if (typeof v === "string" || !hasKind(v, "Line") || !v.component)
             continue;
+        if (isMooToken(v.component, "longLingualOption")) {
+            interactions.push({
+                index: interactions.length,
+                type: WAML.InteractionType.LONG_LINGUAL_OPTION,
+                placeholder: v.component.value,
+            });
+            continue;
+        }
         if (hasKind(v.component, "LineComponent") && v.component.headOption) {
             handleChoiceOption(v.component.headOption.value);
         }

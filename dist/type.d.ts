@@ -3,7 +3,8 @@ export declare namespace WAML {
         CHOICE_OPTION = 0,
         BUTTON_OPTION = 1,
         SHORT_LINGUAL_OPTION = 2,
-        PAIRING_NET = 3
+        LONG_LINGUAL_OPTION = 3,
+        PAIRING_NET = 4
     }
     export enum ChoiceOptionGroup {
         NUMERIC = 0,
@@ -53,6 +54,9 @@ export declare namespace WAML {
         multipleness?: "ordered" | "unordered";
     } | {
         type: InteractionType.SHORT_LINGUAL_OPTION;
+        placeholder: string;
+    } | {
+        type: InteractionType.LONG_LINGUAL_OPTION;
         placeholder: string;
     } | {
         type: InteractionType.PAIRING_NET;
