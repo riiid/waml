@@ -65,13 +65,13 @@ export function getAnswerFormat(
     string,
     TypedInteraction<WAML.InteractionType.CHOICE_OPTION>
   > = {};
-  const existingButtonOptionGroup: Record<
-    string,
-    TypedInteraction<WAML.InteractionType.BUTTON_OPTION>
-  > = {};
   const existingPairingNetGroup: Record<
     string,
     TypedInteraction<WAML.InteractionType.PAIRING_NET>
+  > = {};
+  const buttonOptionValues: Record<
+    string,
+    string[]
   > = {};
 
   for (const v of document) {
@@ -198,20 +198,19 @@ export function getAnswerFormat(
   function handleButtonOption(value: string): void {
     // TODO 추후 그룹 이름 지정이 들어가야 할 수도...
     const group = "default";
+    const values = buttonOptionValues[group] ||= [];
 
-    if (existingButtonOptionGroup[group]) {
-      existingButtonOptionGroup[group].values.push(value);
-      return;
-    }
-    interactions.push(
-      (existingButtonOptionGroup[group] = {
+    if(value === ""){
+      interactions.push({
         index: interactions.length,
         type: WAML.InteractionType.BUTTON_OPTION,
         group,
-        values: [value],
-        multipleness: getMultipleness(interactions.length),
-      })
-    );
+        values,
+        multipleness: getMultipleness(interactions.length)
+      });
+    }else{
+      values.push(value);
+    }
   }
   function getMultipleness(index: number) {
     const chunk = flattenAnswers[index];

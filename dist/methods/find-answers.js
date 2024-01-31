@@ -51,8 +51,8 @@ export function getAnswerFormat(document, answer) {
     const choiceOptionValues = getChoiceOptionValues(document);
     const interactions = [];
     const existingChoiceOptionGroup = {};
-    const existingButtonOptionGroup = {};
     const existingPairingNetGroup = {};
+    const buttonOptionValues = {};
     for (const v of document) {
         if (typeof v === "string" || !hasKind(v, "Line") || !v.component)
             continue;
@@ -178,17 +178,19 @@ export function getAnswerFormat(document, answer) {
     function handleButtonOption(value) {
         // TODO 추후 그룹 이름 지정이 들어가야 할 수도...
         const group = "default";
-        if (existingButtonOptionGroup[group]) {
-            existingButtonOptionGroup[group].values.push(value);
-            return;
+        const values = buttonOptionValues[group] || (buttonOptionValues[group] = []);
+        if (value === "") {
+            interactions.push({
+                index: interactions.length,
+                type: WAML.InteractionType.BUTTON_OPTION,
+                group,
+                values,
+                multipleness: getMultipleness(interactions.length)
+            });
         }
-        interactions.push((existingButtonOptionGroup[group] = {
-            index: interactions.length,
-            type: WAML.InteractionType.BUTTON_OPTION,
-            group,
-            values: [value],
-            multipleness: getMultipleness(interactions.length),
-        }));
+        else {
+            values.push(value);
+        }
     }
     function getMultipleness(index) {
         const chunk = flattenAnswers[index];
