@@ -24,8 +24,8 @@
     prefix: textual.prefix,
     longLingualOption: { match: /\{{3}.*?\}{3}/, value: chunk => chunk.slice(3, -3) },
     shortLingualOptionOpen: { match: /{{/, push: "option" },
-    buttonBlank: { match: /{\[_{3,}\]}/, value: "default" },
-    buttonOptionOpen: { match: /{\[/, push: "singleButtonOption" },
+    buttonBlank: { match: /{[\d,]*\[_{3,}\]}/, value: chunk => (chunk.match(/^{([\d,]*)\[/)[1] || "0").split(',').filter(v => v).map(v => parseInt(v)) },
+    buttonOptionOpen: { match: /{[\d,]*\[/, value: chunk => chunk.match(/^{([\d,]*)\[/)[1] || "0", push: "singleButtonOption" },
     choiceOptionOpen: { match: /{/, push: "singleChoiceOption" },
     pairingOptionGroupOpen: { match: /<pog>/ },
 
@@ -328,11 +328,12 @@ ChoiceOption   -> %choiceOptionOpen Text:+ OptionRest:? %choiceOptionClose {% ([
                                                                             ordered: multiple ? rest?.kind === "OrderedOptionRest" : undefined
                                                                           };
                                                                         }%}
-ButtonOption   -> %buttonOptionOpen Text:+ OptionRest:? %buttonOptionClose {% ([ , first, rest, close ]) => {
+ButtonOption   -> %buttonOptionOpen Text:+ OptionRest:? %buttonOptionClose {% ([ open, first, rest, close ]) => {
                                                                           const multiple = rest || close.value.startsWith(",");
                                                                           return {
                                                                             kind: "ButtonOption",
                                                                             id: ++buttonOptionCounter,
+                                                                            group: open.value.split(',').filter(v => v).map(v => parseInt(v)),
                                                                             value: multiple ? [ first.join(''), ...(rest?.value || []) ] : first.join(''),
                                                                             ordered: multiple ? rest?.kind === "OrderedOptionRest" : undefined
                                                                           };

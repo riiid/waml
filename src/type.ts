@@ -54,7 +54,7 @@ export namespace WAML {
       }
     | {
         type: InteractionType.BUTTON_OPTION;
-        group: "default";
+        group: number;
         values: string[];
         multipleness?: "ordered" | "unordered";
       }
@@ -112,7 +112,8 @@ export namespace WAML {
   export type InlineOption = ChoiceOption | ButtonOption | ShortLingualOption;
   export type ChoiceOption = ObjectiveOption<"ChoiceOption">;
   export type ButtonOption = ObjectiveOption<"ButtonOption"> & {
-    id: number;
+    id: number; // NOTE 같은 보기가 여럿 있을 수도 있기 때문
+    group: number[];
   };
   export type ShortLingualOption = {
     kind: "ShortLingualOption";
@@ -247,7 +248,7 @@ export namespace WAML {
     };
     hr: "---";
     rowSeparator: "===";
-    buttonBlank: string;
+    buttonBlank: number[];
   };
 
   type ObjectiveOption<T extends string> = {

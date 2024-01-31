@@ -69,10 +69,7 @@ export function getAnswerFormat(
     string,
     TypedInteraction<WAML.InteractionType.PAIRING_NET>
   > = {};
-  const buttonOptionValues: Record<
-    string,
-    string[]
-  > = {};
+  const buttonOptionValues: Record<string, string[]> = {};
 
   for (const v of document) {
     if (typeof v === "string" || !hasKind(v, "Line") || !v.component) continue;
@@ -116,7 +113,7 @@ export function getAnswerFormat(
   function checkInline(inline: WAML.Inline): void {
     if (typeof inline === "string") return;
     if (isMooToken(inline, "buttonBlank")) {
-      handleButtonOption("");
+      handleButtonOption("", inline.value);
       return;
     }
     if (hasKind(inline, "XMLElement") && inline.tag === "pog") {
@@ -156,7 +153,7 @@ export function getAnswerFormat(
     } else if (hasKind(inline, "ChoiceOption")) {
       handleChoiceOption(inline.value);
     } else if (hasKind(inline, "ButtonOption")) {
-      handleButtonOption(inline.value);
+      handleButtonOption(inline.value, inline.group);
     } else if (hasKind(inline, "ShortLingualOption")) {
       interactions.push({
         index: interactions.length,
@@ -195,21 +192,21 @@ export function getAnswerFormat(
       );
     }
   }
-  function handleButtonOption(value: string): void {
-    // TODO 추후 그룹 이름 지정이 들어가야 할 수도...
-    const group = "default";
-    const values = buttonOptionValues[group] ||= [];
+  function handleButtonOption(value: string, group: number[]): void {
+    for (const v of group) {
+      const values = (buttonOptionValues[v] ||= []);
 
-    if(value === ""){
-      interactions.push({
-        index: interactions.length,
-        type: WAML.InteractionType.BUTTON_OPTION,
-        group,
-        values,
-        multipleness: getMultipleness(interactions.length)
-      });
-    }else{
-      values.push(value);
+      if (value === "") {
+        interactions.push({
+          index: interactions.length,
+          type: WAML.InteractionType.BUTTON_OPTION,
+          group: v,
+          values,
+          multipleness: getMultipleness(interactions.length),
+        });
+      } else {
+        values.push(value);
+      }
     }
   }
   function getMultipleness(index: number) {

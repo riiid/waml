@@ -49,7 +49,7 @@ export declare namespace WAML {
         multipleness?: "ordered" | "unordered";
     } | {
         type: InteractionType.BUTTON_OPTION;
-        group: "default";
+        group: number;
         values: string[];
         multipleness?: "ordered" | "unordered";
     } | {
@@ -85,6 +85,7 @@ export declare namespace WAML {
     export type ChoiceOption = ObjectiveOption<"ChoiceOption">;
     export type ButtonOption = ObjectiveOption<"ButtonOption"> & {
         id: number;
+        group: number[];
     };
     export type ShortLingualOption = {
         kind: "ShortLingualOption";
@@ -210,7 +211,7 @@ export declare namespace WAML {
         };
         hr: "---";
         rowSeparator: "===";
-        buttonBlank: string;
+        buttonBlank: number[];
     };
     type ObjectiveOption<T extends string> = {
         kind: T;

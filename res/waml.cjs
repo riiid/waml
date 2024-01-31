@@ -28,8 +28,8 @@ function id(x) { return x[0]; }
     prefix: textual.prefix,
     longLingualOption: { match: /\{{3}.*?\}{3}/, value: chunk => chunk.slice(3, -3) },
     shortLingualOptionOpen: { match: /{{/, push: "option" },
-    buttonBlank: { match: /{\[_{3,}\]}/, value: "default" },
-    buttonOptionOpen: { match: /{\[/, push: "singleButtonOption" },
+    buttonBlank: { match: /{[\d,]*\[_{3,}\]}/, value: chunk => (chunk.match(/^{([\d,]*)\[/)[1] || "0").split(',').filter(v => v).map(v => parseInt(v)) },
+    buttonOptionOpen: { match: /{[\d,]*\[/, value: chunk => chunk.match(/^{([\d,]*)\[/)[1] || "0", push: "singleButtonOption" },
     choiceOptionOpen: { match: /{/, push: "singleChoiceOption" },
     pairingOptionGroupOpen: { match: /<pog>/ },
 
@@ -419,11 +419,12 @@ var grammar = {
     {"name": "ButtonOption$ebnf$1", "symbols": ["ButtonOption$ebnf$1", "Text"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "ButtonOption$ebnf$2", "symbols": ["OptionRest"], "postprocess": id},
     {"name": "ButtonOption$ebnf$2", "symbols": [], "postprocess": function(d) {return null;}},
-    {"name": "ButtonOption", "symbols": [(lexer.has("buttonOptionOpen") ? {type: "buttonOptionOpen"} : buttonOptionOpen), "ButtonOption$ebnf$1", "ButtonOption$ebnf$2", (lexer.has("buttonOptionClose") ? {type: "buttonOptionClose"} : buttonOptionClose)], "postprocess":  ([ , first, rest, close ]) => {
+    {"name": "ButtonOption", "symbols": [(lexer.has("buttonOptionOpen") ? {type: "buttonOptionOpen"} : buttonOptionOpen), "ButtonOption$ebnf$1", "ButtonOption$ebnf$2", (lexer.has("buttonOptionClose") ? {type: "buttonOptionClose"} : buttonOptionClose)], "postprocess":  ([ open, first, rest, close ]) => {
           const multiple = rest || close.value.startsWith(",");
           return {
             kind: "ButtonOption",
             id: ++buttonOptionCounter,
+            group: open.value.split(',').filter(v => v).map(v => parseInt(v)),
             value: multiple ? [ first.join(''), ...(rest?.value || []) ] : first.join(''),
             ordered: multiple ? rest?.kind === "OrderedOptionRest" : undefined
           };

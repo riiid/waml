@@ -97,7 +97,7 @@ export function getAnswerFormat(document, answer) {
         if (typeof inline === "string")
             return;
         if (isMooToken(inline, "buttonBlank")) {
-            handleButtonOption("");
+            handleButtonOption("", inline.value);
             return;
         }
         if (hasKind(inline, "XMLElement") && inline.tag === "pog") {
@@ -139,7 +139,7 @@ export function getAnswerFormat(document, answer) {
             handleChoiceOption(inline.value);
         }
         else if (hasKind(inline, "ButtonOption")) {
-            handleButtonOption(inline.value);
+            handleButtonOption(inline.value, inline.group);
         }
         else if (hasKind(inline, "ShortLingualOption")) {
             interactions.push({
@@ -175,21 +175,21 @@ export function getAnswerFormat(document, answer) {
             }));
         }
     }
-    function handleButtonOption(value) {
-        // TODO 추후 그룹 이름 지정이 들어가야 할 수도...
-        const group = "default";
-        const values = buttonOptionValues[group] || (buttonOptionValues[group] = []);
-        if (value === "") {
-            interactions.push({
-                index: interactions.length,
-                type: WAML.InteractionType.BUTTON_OPTION,
-                group,
-                values,
-                multipleness: getMultipleness(interactions.length)
-            });
-        }
-        else {
-            values.push(value);
+    function handleButtonOption(value, group) {
+        for (const v of group) {
+            const values = (buttonOptionValues[v] || (buttonOptionValues[v] = []));
+            if (value === "") {
+                interactions.push({
+                    index: interactions.length,
+                    type: WAML.InteractionType.BUTTON_OPTION,
+                    group: v,
+                    values,
+                    multipleness: getMultipleness(interactions.length),
+                });
+            }
+            else {
+                values.push(value);
+            }
         }
     }
     function getMultipleness(index) {
