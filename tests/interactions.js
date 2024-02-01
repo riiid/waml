@@ -8,12 +8,14 @@ const content = `
 
 {{test}}
 
-<pog>
+<table>
+[<pog>
 {1 -> net} ㄱ
 {2 -> net} ㄴ
 {a <- net} ㄷ
 {b <- net} ㄹ
-</pog>
+</pog>]
+</table>
 
 @answer {a}{{b}}net{{1 -> a},{2 -> b}}
 `;

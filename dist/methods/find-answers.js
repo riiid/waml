@@ -53,38 +53,50 @@ export function getAnswerFormat(document, answer) {
     const existingChoiceOptionGroup = {};
     const existingPairingNetGroup = {};
     const buttonOptionValues = {};
-    for (const v of document) {
-        if (typeof v === "string" || !hasKind(v, "Line") || !v.component)
-            continue;
-        if (isMooToken(v.component, "longLingualOption")) {
-            interactions.push({
-                index: interactions.length,
-                type: WAML.InteractionType.LONG_LINGUAL_OPTION,
-                placeholder: v.component.value,
-            });
-            continue;
-        }
-        if (hasKind(v.component, "LineComponent") && v.component.headOption) {
-            handleChoiceOption(v.component.headOption.value);
-        }
-        if (hasKind(v.component, "ShortLingualOption")) {
-            checkInline(v.component);
-        }
-        if ("inlines" in v.component) {
-            for (const w of iterate(v.component.inlines)) {
-                checkInline(w);
+    iterateDocument(document);
+    return { interactions };
+    function iterateDocument(document) {
+        for (const v of document) {
+            if (typeof v === "string" || !hasKind(v, "Line") || !v.component)
+                continue;
+            if (isMooToken(v.component, "longLingualOption")) {
+                interactions.push({
+                    index: interactions.length,
+                    type: WAML.InteractionType.LONG_LINGUAL_OPTION,
+                    placeholder: v.component.value,
+                });
+                continue;
+            }
+            if (hasKind(v.component, "LineComponent") && v.component.headOption) {
+                handleChoiceOption(v.component.headOption.value);
+            }
+            if (hasKind(v.component, "ShortLingualOption")) {
+                checkInline(v.component);
+            }
+            if ("inlines" in v.component) {
+                for (const w of iterate(v.component.inlines)) {
+                    checkInline(w);
+                }
             }
         }
     }
-    return { interactions };
     function* iterate(inlines) {
         for (const v of inlines) {
             yield v;
             if (typeof v === "string")
                 continue;
-            if (hasKind(v, "XMLElement") && v.tag === "pog") {
-                for (const w of v.content) {
-                    yield* iterate(w.inlines);
+            if (hasKind(v, "XMLElement")) {
+                if (v.tag === "pog") {
+                    for (const w of v.content) {
+                        yield* iterate(w.inlines);
+                    }
+                }
+                else if (v.tag === "table") {
+                    for (const w of v.content) {
+                        if (!hasKind(w, "Cell"))
+                            continue;
+                        iterateDocument(w.body);
+                    }
                 }
                 continue;
             }
