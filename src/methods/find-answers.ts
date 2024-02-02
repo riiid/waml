@@ -32,7 +32,9 @@ export function findAnswers(document: WAML.Document) {
           return {
             type: "MULTIPLE",
             ordered: false,
-            value: option.list.map(({ from, to }) => `${from}→${to}`),
+            value: option.list
+              .map(({ from, to }) => `${from}→${to}`)
+              .sort((a, b) => a.localeCompare(b)),
           };
         case "ShortLingualOption":
           return { type: "SINGLE", value: [option.value] };
@@ -42,7 +44,7 @@ export function findAnswers(document: WAML.Document) {
             return { type: "SINGLE", value: [option.value] };
           }
           // NOTE `@answer {2,1}`이라 적었을 때 학생이 1 -> 2 순으로 답을 내는 경우에도 정답 처리하기 위함
-          if (!option.ordered) option.value.sort();
+          if (!option.ordered) option.value.sort((a, b) => a.localeCompare(b));
           return {
             type: "MULTIPLE",
             value: option.value,
