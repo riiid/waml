@@ -32,6 +32,7 @@ function id(x) { return x[0]; }
     buttonOptionOpen: { match: /{[\d,]*\[/, value: chunk => chunk.match(/^{([\d,]*)\[/)[1] || "0", push: "singleButtonOption" },
     choiceOptionOpen: { match: /{/, push: "singleChoiceOption" },
     pairingOptionGroupOpen: { match: /<pog>/ },
+    xTableOpen: { match: /<table/, push: "xTableOpening", value: () => "table" },
 
     dKVDirective: { match: /@(?:passage|answertype)\b/, value: chunk => chunk.slice(1) },
     dAnswer: { match: "@answer", push: "answer" },
@@ -62,7 +63,6 @@ function id(x) { return x[0]; }
     xStyleOpen: { match: /<style>\s*/, push: "xStyle", value: () => "style" },
     xExplanationOpen: { match: /<explanation>\s*/, push: "xExplanation", value: () => "explanation" },
     xPOGOpen: { match: /<pog>\s*/, push: "xPOG", value: () => "pog" },
-    xTableOpen: { match: /<table/, push: "xTableOpening", value: () => "table" },
     ...withoutXML
   };
   const getCellOpenTokenValue = inline => chunk => {
