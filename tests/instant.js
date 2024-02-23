@@ -1,8 +1,8 @@
 import { WAMLDocument } from "../dist/document.js";
 
 const content = `
-Hello, World!
+![1](2){"a":1}
 `;
 const document = new WAMLDocument(content);
 
-console.log(JSON.stringify(document.metadata.answerFormat));
+console.log(JSON.stringify(document.raw));

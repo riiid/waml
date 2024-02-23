@@ -17,6 +17,7 @@ export declare class WAMLDocument {
             type: "image" | "audio" | "video";
             uri: string;
             alt?: string;
+            json: object;
         };
         text: string;
         offset: number;

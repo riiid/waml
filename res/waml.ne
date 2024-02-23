@@ -7,7 +7,7 @@
     "a": "audio",
     "v": "video"
   };
-  const mediumPattern = new RegExp(`!(${Object.keys(MEDIUM_TYPES).join("|")})?(?:\\[(.+?)\\])?\\((.+?)\\)`);
+  const mediumPattern = new RegExp(`!(${Object.keys(MEDIUM_TYPES).join("|")})?(?:\\[(.+?)\\])?\\((.+?)\\)(\\{.+?\\})?`);
 
   const textual = {
     prefix: /[#>|](?=\s|$)/,
@@ -44,9 +44,9 @@
     medium: {
       match: ungroup(mediumPattern),
       value: chunk => {
-        const [ , typeKey = "i", title, uri ] = chunk.match(mediumPattern);
+        const [ , typeKey = "i", title, uri, json ] = chunk.match(mediumPattern);
 
-        return { type: MEDIUM_TYPES[typeKey], title, uri };
+        return { type: MEDIUM_TYPES[typeKey], title, uri, json: json ? JSON.parse(json) : {} };
       }
     },
     lineBreak: { match: /\r?\n/, lineBreaks: true },

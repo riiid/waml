@@ -208,6 +208,7 @@ export declare namespace WAML {
             type: "image" | "audio" | "video";
             uri: string;
             alt?: string;
+            json: object;
         };
         hr: "---";
         rowSeparator: "===";
