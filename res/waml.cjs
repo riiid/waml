@@ -48,9 +48,15 @@ function id(x) { return x[0]; }
     medium: {
       match: ungroup(mediumPattern),
       value: chunk => {
-        const [ , typeKey = "i", title, uri, json ] = chunk.match(mediumPattern);
+        const [ , typeKey = "i", title, uri, jsonChunk ] = chunk.match(mediumPattern);
+        let json = {};
 
-        return { type: MEDIUM_TYPES[typeKey], title, uri, json: json ? JSON.parse(json) : {} };
+        if(jsonChunk) try{
+          json = JSON.parse(jsonChunk);
+        }catch(error){
+          json = { error: error.toString() };
+        }
+        return { type: MEDIUM_TYPES[typeKey], title, uri, json };
       }
     },
     lineBreak: { match: /\r?\n/, lineBreaks: true },
