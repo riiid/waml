@@ -1,7 +1,8 @@
 import { WAMLDocument } from "../dist/document.js";
 
 const content = `
-![1](2){"a":}
+@answer {1}
+@answer abc{1}
 `;
 const document = new WAMLDocument(content);
 

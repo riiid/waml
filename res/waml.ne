@@ -7,15 +7,16 @@
     "a": "audio",
     "v": "video"
   };
-  const mediumPattern = new RegExp(`!(${Object.keys(MEDIUM_TYPES).join("|")})?(?:\\[(.+?)\\])?\\((.+?)\\)(\\{.+?\\})?`);
+  const mediumPattern = /!(i|a|v)?(?:\[(.+?)\])?\((.+?)\)(\{.+?\})?/;
+  const ungroupedMediumPattern = /!(?:i|a|v)?(?:\[(?:.+?)\])?\((?:.+?)\)(?:\{.+?\})?/;
 
+  const escaping = { match: /\\/, push: "escaping" };
   const textual = {
     prefix: /[#>|](?=\s|$)/,
     identifiable: /[\w가-힣-]/,
     character: /./
   };
   const withoutXML = {
-    escaping: { match: /\\./, value: chunk => chunk[1] },
     lineComment: /^\/\/[^\n]+/,
     classOpen: "[[", classClose: "]]",
     blockMathOpen: { match: "$$", push: "blockMath" },
@@ -37,12 +38,12 @@
     sBoldOpen: { match: /\*\*/, push: "sBold" },
     footnote: "*)",
     anchor: "^>",
-    sItalicOpen: { match: /(?<!\\)\*/, push: "sItalic" },
+    sItalicOpen: { match: /\*/, push: "sItalic" },
     title: "##",
     caption: "))",
 
     medium: {
-      match: ungroup(mediumPattern),
+      match: ungroupedMediumPattern,
       value: chunk => {
         const [ , typeKey = "i", title, uri, jsonChunk ] = chunk.match(mediumPattern);
         let json = {};
@@ -62,6 +63,7 @@
     character: textual.character
   };
   const main = {
+    escaping,
     xStyleOpen: { match: /<style>\s*/, push: "xStyle", value: () => "style" },
     xExplanationOpen: { match: /<explanation>\s*/, push: "xExplanation", value: () => "explanation" },
     xPOGOpen: { match: /<pog>\s*/, push: "xPOG", value: () => "pog" },
@@ -76,26 +78,34 @@
   };
   const lexer = moo.states({
     main,
+    escaping: {
+      any: { match: /[\s\S]/, lineBreaks: true, pop: 1 }
+    },
     xStyle: {
+      escaping,
       xStyleClose: { match: /\s*<\/style>/, pop: 1 },
       any: { match: /[\s\S]/, lineBreaks: true }
     },
     xExplanation: {
+      escaping,
       xExplanationClose: { match: /\s*<\/explanation>/, pop: 1 },
       xTableOpen: main.xTableOpen,
       ...withoutXML
     },
     xPOG: {
+      escaping,
       xPOGClose: { match: /\s*<\/pog>/, pop: 1 },
       ...withoutXML
     },
     xTableOpening: {
+      escaping,
       tagClose: { match: />/, next: "xTable" },
       spaces: withoutXML.spaces,
       identifiable: withoutXML.identifiable,
       character: withoutXML.character
     },
     xTable: {
+      escaping,
       xTableClose: { match: /\s*<\/table>/, pop: 1 },
       cellOpen: { match: /^\s*#?\[:?/, push: "xTableCell", value: getCellOpenTokenValue(false) },
       inlineCellOpen: { match: /#?\[:?/, push: "xTableCell", value: getCellOpenTokenValue(true) },
@@ -104,6 +114,7 @@
       spaces: /[ \t]+/
     },
     xTableCell: {
+      escaping,
       classClose: main.classClose,
       cellClose: { match: /:?]-*(?:\r?\n\|)*/, lineBreaks: true, pop: 1, value: chunk => {
         const colspan = chunk.split('-').length;
@@ -118,7 +129,8 @@
       ...omit(main, 'classClose')
     },
     answer: {
-      pairingNetOpen: { match: /(?<=[\w가-힣]){\s*/, push: "pairingNet" },
+      escaping,
+      pairingNetOpen: { match: /[\w가-힣]+?{\s*/, push: "pairingNet", value: chunk => chunk.split('{')[0] },
       shortLingualOptionOpen: { match: /{{/, push: "option" },
       buttonOptionOpen: { match: /{\[/, push: "objectiveOption" },
       choiceOptionOpen: { match: /{/, push: "objectiveOption" },
@@ -127,63 +139,71 @@
       spaces: withoutXML.spaces
     },
     pairingNet: {
+      escaping,
       pairingNetItemOpen: { match: /{/, push: "pairingNetItem" },
       arraySeparator: /\s*,\s*/,
       pairingNetClose: { match: /\s*}\s*?/, pop: 1 },
       spaces: withoutXML.spaces
     },
     pairingNetItem: {
+      escaping,
       pairingNetItemArrow: /\s*->\s*/,
       pairingNetItemClose: { match: /}/, pop: 1 },
       identifiable: textual.identifiable,
       spaces: withoutXML.spaces
     },
     option: { // 단답형
-      escaping: withoutXML.escaping,
+      escaping,
       shortLingualOptionClose: { match: /}}/, pop: 1 },
       shortLingualDefaultValue: { match: "=" },
       ...textual
     },
     singleButtonOption: { // @answer 이외
-      escaping: withoutXML.escaping,
+      escaping,
       buttonOptionClose: { match: /,?]}/, pop: 1 },
       ...textual
     },
     singleChoiceOption: { // @answer 이외
-      escaping: withoutXML.escaping,
+      escaping,
       pairingSeparator: /\s*(?:->|=>|<-|<=)\s*/,
       choiceOptionClose: { match: /,?}/, pop: 1 },
       ...textual
     },
     objectiveOption: { // @answer 한정
-      escaping: withoutXML.escaping,
+      escaping,
       buttonOptionClose: { match: /,?]}/, pop: 1 },
       choiceOptionClose: { match: /,?}/, pop: 1 },
       orderedOptionSeparator: /\s*->\s*/,
-      unorderedOptionSeparator: /\s*(?<!\\),\s*/,
+      unorderedOptionSeparator: /\s*,\s*/,
       ...textual
     },
     blockMath: {
+      escaping,
       blockMathClose: { match: "$$", pop: 1 },
       any: { match: /[\s\S]/, lineBreaks: true }
     },
     inlineMath: {
-      inlineMathClose: { match: /(?<!\\)\$/, pop: 1 },
+      escaping,
+      inlineMathClose: { match: /\$/, pop: 1 },
       any: { match: /[\s\S]/, lineBreaks: true }
     },
     sBold: {
+      escaping,
       sBoldClose: { match: /\*\*/, pop: 1 },
       ...withoutXML
     },
     sItalic: {
-      sItalicClose: { match: /(?<!\\)\*/, pop: 1 },
+      escaping,
+      sItalicClose: { match: /\*/, pop: 1 },
       ...withoutXML
     },
     sStrikethrough: {
+      escaping,
       sStrikethroughClose: { match: /~~/, pop: 1 },
       ...withoutXML
     },
     sUnderline: {
+      escaping,
       sUnderlineClose: { match: /__/, pop: 1 },
       ...withoutXML
     }
@@ -191,12 +211,6 @@
 
   let buttonOptionCounter = 0;
 
-  function ungroup(pattern){
-    return new RegExp(
-      pattern.source.replace(/(?<!\\)\((?!\?:)(.+?)(?<!\\)\)/g, "(?:$1)"),
-      pattern.flags
-    );
-  }
   function trimArray(array){
     while(array.length){
       if(typeof array[0] !== "string" || array[0].trim()){
@@ -277,7 +291,7 @@ Text           -> %identifiable                                         {% ([ to
                   | %caption                                            {% ([ token ]) => token.value %}
                   | %prefix                                             {% ([ token ]) => token.value %}
                   | %character                                          {% ([ token ]) => token.value %}
-                  | %escaping                                           {% ([ token ]) => token.value %}
+                  | %escaping %any                                      {% ([ , token ]) => token.value %}
 StyledInline   -> %sUnderlineOpen Inline:* %sUnderlineClose             {% ([ , inlines ]) => ({ kind: "StyledInline", style: "underline", inlines }) %}
                   | %sBoldOpen Inline:* %sBoldClose                     {% ([ , inlines ]) => ({ kind: "StyledInline", style: "bold", inlines }) %}
                   | %sItalicOpen Inline:+ %sItalicClose                 {% ([ , inlines ]) => ({ kind: "StyledInline", style: "italic", inlines }) %}
@@ -369,9 +383,9 @@ ShortLingualOption -> %shortLingualOptionOpen %shortLingualDefaultValue:? Text:*
                                                                           value: value.join(''),
                                                                           defaultValue: Boolean(defaultValue)
                                                                         })%}
-PairingNet     -> %identifiable:+ %pairingNetOpen Array[PairingNetItem, %arraySeparator] %pairingNetClose {% ([ name,, list ]) => ({
+PairingNet     -> %pairingNetOpen Array[PairingNetItem, %arraySeparator] %pairingNetClose {% ([ { value: name }, list ]) => ({
                                                                           kind: "PairingNet",
-                                                                          name: name.join(''),
+                                                                          name,
                                                                           list
                                                                         })%}
 PairingNetItem -> %pairingNetItemOpen %spaces:? %identifiable:+ %pairingNetItemArrow %identifiable:+ %spaces:? %pairingNetItemClose {% ([ ,, from,, to ]) => ({

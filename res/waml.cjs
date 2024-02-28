@@ -11,15 +11,16 @@ function id(x) { return x[0]; }
     "a": "audio",
     "v": "video"
   };
-  const mediumPattern = new RegExp(`!(${Object.keys(MEDIUM_TYPES).join("|")})?(?:\\[(.+?)\\])?\\((.+?)\\)(\\{.+?\\})?`);
+  const mediumPattern = /!(i|a|v)?(?:\[(.+?)\])?\((.+?)\)(\{.+?\})?/;
+  const ungroupedMediumPattern = /!(?:i|a|v)?(?:\[(?:.+?)\])?\((?:.+?)\)(?:\{.+?\})?/;
 
+  const escaping = { match: /\\/, push: "escaping" };
   const textual = {
     prefix: /[#>|](?=\s|$)/,
     identifiable: /[\w가-힣-]/,
     character: /./
   };
   const withoutXML = {
-    escaping: { match: /\\./, value: chunk => chunk[1] },
     lineComment: /^\/\/[^\n]+/,
     classOpen: "[[", classClose: "]]",
     blockMathOpen: { match: "$$", push: "blockMath" },
@@ -41,12 +42,12 @@ function id(x) { return x[0]; }
     sBoldOpen: { match: /\*\*/, push: "sBold" },
     footnote: "*)",
     anchor: "^>",
-    sItalicOpen: { match: /(?<!\\)\*/, push: "sItalic" },
+    sItalicOpen: { match: /\*/, push: "sItalic" },
     title: "##",
     caption: "))",
 
     medium: {
-      match: ungroup(mediumPattern),
+      match: ungroupedMediumPattern,
       value: chunk => {
         const [ , typeKey = "i", title, uri, jsonChunk ] = chunk.match(mediumPattern);
         let json = {};
@@ -66,6 +67,7 @@ function id(x) { return x[0]; }
     character: textual.character
   };
   const main = {
+    escaping,
     xStyleOpen: { match: /<style>\s*/, push: "xStyle", value: () => "style" },
     xExplanationOpen: { match: /<explanation>\s*/, push: "xExplanation", value: () => "explanation" },
     xPOGOpen: { match: /<pog>\s*/, push: "xPOG", value: () => "pog" },
@@ -80,26 +82,34 @@ function id(x) { return x[0]; }
   };
   const lexer = moo.states({
     main,
+    escaping: {
+      any: { match: /[\s\S]/, lineBreaks: true, pop: 1 }
+    },
     xStyle: {
+      escaping,
       xStyleClose: { match: /\s*<\/style>/, pop: 1 },
       any: { match: /[\s\S]/, lineBreaks: true }
     },
     xExplanation: {
+      escaping,
       xExplanationClose: { match: /\s*<\/explanation>/, pop: 1 },
       xTableOpen: main.xTableOpen,
       ...withoutXML
     },
     xPOG: {
+      escaping,
       xPOGClose: { match: /\s*<\/pog>/, pop: 1 },
       ...withoutXML
     },
     xTableOpening: {
+      escaping,
       tagClose: { match: />/, next: "xTable" },
       spaces: withoutXML.spaces,
       identifiable: withoutXML.identifiable,
       character: withoutXML.character
     },
     xTable: {
+      escaping,
       xTableClose: { match: /\s*<\/table>/, pop: 1 },
       cellOpen: { match: /^\s*#?\[:?/, push: "xTableCell", value: getCellOpenTokenValue(false) },
       inlineCellOpen: { match: /#?\[:?/, push: "xTableCell", value: getCellOpenTokenValue(true) },
@@ -108,6 +118,7 @@ function id(x) { return x[0]; }
       spaces: /[ \t]+/
     },
     xTableCell: {
+      escaping,
       classClose: main.classClose,
       cellClose: { match: /:?]-*(?:\r?\n\|)*/, lineBreaks: true, pop: 1, value: chunk => {
         const colspan = chunk.split('-').length;
@@ -122,7 +133,8 @@ function id(x) { return x[0]; }
       ...omit(main, 'classClose')
     },
     answer: {
-      pairingNetOpen: { match: /(?<=[\w가-힣]){\s*/, push: "pairingNet" },
+      escaping,
+      pairingNetOpen: { match: /[\w가-힣]+?{\s*/, push: "pairingNet", value: chunk => chunk.split('{')[0] },
       shortLingualOptionOpen: { match: /{{/, push: "option" },
       buttonOptionOpen: { match: /{\[/, push: "objectiveOption" },
       choiceOptionOpen: { match: /{/, push: "objectiveOption" },
@@ -131,63 +143,71 @@ function id(x) { return x[0]; }
       spaces: withoutXML.spaces
     },
     pairingNet: {
+      escaping,
       pairingNetItemOpen: { match: /{/, push: "pairingNetItem" },
       arraySeparator: /\s*,\s*/,
       pairingNetClose: { match: /\s*}\s*?/, pop: 1 },
       spaces: withoutXML.spaces
     },
     pairingNetItem: {
+      escaping,
       pairingNetItemArrow: /\s*->\s*/,
       pairingNetItemClose: { match: /}/, pop: 1 },
       identifiable: textual.identifiable,
       spaces: withoutXML.spaces
     },
     option: { // 단답형
-      escaping: withoutXML.escaping,
+      escaping,
       shortLingualOptionClose: { match: /}}/, pop: 1 },
       shortLingualDefaultValue: { match: "=" },
       ...textual
     },
     singleButtonOption: { // @answer 이외
-      escaping: withoutXML.escaping,
+      escaping,
       buttonOptionClose: { match: /,?]}/, pop: 1 },
       ...textual
     },
     singleChoiceOption: { // @answer 이외
-      escaping: withoutXML.escaping,
+      escaping,
       pairingSeparator: /\s*(?:->|=>|<-|<=)\s*/,
       choiceOptionClose: { match: /,?}/, pop: 1 },
       ...textual
     },
     objectiveOption: { // @answer 한정
-      escaping: withoutXML.escaping,
+      escaping,
       buttonOptionClose: { match: /,?]}/, pop: 1 },
       choiceOptionClose: { match: /,?}/, pop: 1 },
       orderedOptionSeparator: /\s*->\s*/,
-      unorderedOptionSeparator: /\s*(?<!\\),\s*/,
+      unorderedOptionSeparator: /\s*,\s*/,
       ...textual
     },
     blockMath: {
+      escaping,
       blockMathClose: { match: "$$", pop: 1 },
       any: { match: /[\s\S]/, lineBreaks: true }
     },
     inlineMath: {
-      inlineMathClose: { match: /(?<!\\)\$/, pop: 1 },
+      escaping,
+      inlineMathClose: { match: /\$/, pop: 1 },
       any: { match: /[\s\S]/, lineBreaks: true }
     },
     sBold: {
+      escaping,
       sBoldClose: { match: /\*\*/, pop: 1 },
       ...withoutXML
     },
     sItalic: {
-      sItalicClose: { match: /(?<!\\)\*/, pop: 1 },
+      escaping,
+      sItalicClose: { match: /\*/, pop: 1 },
       ...withoutXML
     },
     sStrikethrough: {
+      escaping,
       sStrikethroughClose: { match: /~~/, pop: 1 },
       ...withoutXML
     },
     sUnderline: {
+      escaping,
       sUnderlineClose: { match: /__/, pop: 1 },
       ...withoutXML
     }
@@ -195,12 +215,6 @@ function id(x) { return x[0]; }
 
   let buttonOptionCounter = 0;
 
-  function ungroup(pattern){
-    return new RegExp(
-      pattern.source.replace(/(?<!\\)\((?!\?:)(.+?)(?<!\\)\)/g, "(?:$1)"),
-      pattern.flags
-    );
-  }
   function trimArray(array){
     while(array.length){
       if(typeof array[0] !== "string" || array[0].trim()){
@@ -305,7 +319,7 @@ var grammar = {
     {"name": "Text", "symbols": [(lexer.has("caption") ? {type: "caption"} : caption)], "postprocess": ([ token ]) => token.value},
     {"name": "Text", "symbols": [(lexer.has("prefix") ? {type: "prefix"} : prefix)], "postprocess": ([ token ]) => token.value},
     {"name": "Text", "symbols": [(lexer.has("character") ? {type: "character"} : character)], "postprocess": ([ token ]) => token.value},
-    {"name": "Text", "symbols": [(lexer.has("escaping") ? {type: "escaping"} : escaping)], "postprocess": ([ token ]) => token.value},
+    {"name": "Text", "symbols": [(lexer.has("escaping") ? {type: "escaping"} : escaping), (lexer.has("any") ? {type: "any"} : any)], "postprocess": ([ , token ]) => token.value},
     {"name": "StyledInline$ebnf$1", "symbols": []},
     {"name": "StyledInline$ebnf$1", "symbols": ["StyledInline$ebnf$1", "Inline"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "StyledInline", "symbols": [(lexer.has("sUnderlineOpen") ? {type: "sUnderlineOpen"} : sUnderlineOpen), "StyledInline$ebnf$1", (lexer.has("sUnderlineClose") ? {type: "sUnderlineClose"} : sUnderlineClose)], "postprocess": ([ , inlines ]) => ({ kind: "StyledInline", style: "underline", inlines })},
@@ -492,17 +506,15 @@ var grammar = {
           value: value.join(''),
           defaultValue: Boolean(defaultValue)
         })},
-    {"name": "PairingNet$ebnf$1", "symbols": [(lexer.has("identifiable") ? {type: "identifiable"} : identifiable)]},
-    {"name": "PairingNet$ebnf$1", "symbols": ["PairingNet$ebnf$1", (lexer.has("identifiable") ? {type: "identifiable"} : identifiable)], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "PairingNet$macrocall$2", "symbols": ["PairingNetItem"]},
     {"name": "PairingNet$macrocall$3", "symbols": [(lexer.has("arraySeparator") ? {type: "arraySeparator"} : arraySeparator)]},
     {"name": "PairingNet$macrocall$1$ebnf$1", "symbols": []},
     {"name": "PairingNet$macrocall$1$ebnf$1$subexpression$1", "symbols": ["PairingNet$macrocall$3", "PairingNet$macrocall$2"]},
     {"name": "PairingNet$macrocall$1$ebnf$1", "symbols": ["PairingNet$macrocall$1$ebnf$1", "PairingNet$macrocall$1$ebnf$1$subexpression$1"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "PairingNet$macrocall$1", "symbols": ["PairingNet$macrocall$2", "PairingNet$macrocall$1$ebnf$1"], "postprocess": ([ first, rest ]) => [ first[0], ...rest.map(v => v[1][0]) ]},
-    {"name": "PairingNet", "symbols": ["PairingNet$ebnf$1", (lexer.has("pairingNetOpen") ? {type: "pairingNetOpen"} : pairingNetOpen), "PairingNet$macrocall$1", (lexer.has("pairingNetClose") ? {type: "pairingNetClose"} : pairingNetClose)], "postprocess":  ([ name,, list ]) => ({
+    {"name": "PairingNet", "symbols": [(lexer.has("pairingNetOpen") ? {type: "pairingNetOpen"} : pairingNetOpen), "PairingNet$macrocall$1", (lexer.has("pairingNetClose") ? {type: "pairingNetClose"} : pairingNetClose)], "postprocess":  ([ { value: name }, list ]) => ({
           kind: "PairingNet",
-          name: name.join(''),
+          name,
           list
         })},
     {"name": "PairingNetItem$ebnf$1", "symbols": [(lexer.has("spaces") ? {type: "spaces"} : spaces)], "postprocess": id},
