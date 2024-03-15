@@ -181,6 +181,10 @@ export declare namespace WAML {
         kind: "XMLElement";
         tag: "pog";
         content: PairingOption[];
+    } | {
+        kind: "XMLElement";
+        tag: "cog";
+        content: Inline[];
     };
     export type TableCell = {
         kind: "Cell";

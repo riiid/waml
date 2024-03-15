@@ -67,6 +67,7 @@
     xStyleOpen: { match: /<style>\s*/, push: "xStyle", value: () => "style" },
     xExplanationOpen: { match: /<explanation>\s*/, push: "xExplanation", value: () => "explanation" },
     xPOGOpen: { match: /<pog>\s*/, push: "xPOG", value: () => "pog" },
+    xCOGOpen: { match: /<cog>\s*/, push: "xCOG", value: () => "cog" },
     ...withoutXML
   };
   const getCellOpenTokenValue = inline => chunk => {
@@ -96,6 +97,11 @@
       escaping,
       xPOGClose: { match: /\s*<\/pog>/, pop: 1 },
       ...withoutXML
+    },
+    xCOG: {
+      escaping,
+      xCOGClose: { match: /\s*<\/cog>/, pop: 1 },
+      ...omit(withoutXML, 'longLingualOption', 'shortLingualOptionOpen', 'buttonBlank', 'buttonOptionOpen')
     },
     xTableOpening: {
       escaping,
@@ -302,6 +308,7 @@ ClassedInline  -> %classOpen %identifiable:+ ":" Inline:* %classClose   {% ([ , 
 XMLElement     -> VoidElement[%xStyleOpen, %any:*, %xStyleClose]        {% ([{ tag, body }]) => ({ kind: "XMLElement", tag, content: mergeValue(body) }) %}
                   | VoidElement[%xExplanationOpen, Main, %xExplanationClose] {% ([{ tag, body }]) => ({ kind: "XMLElement", tag, content: body }) %} 
 LineXMLElement -> Element[%xTableOpen, Table, %xTableClose]             {% ([{ tag, attributes, body }]) => ({ kind: "XMLElement", tag, attributes, content: body }) %}
+                  | VoidElement[%xCOGOpen, Inline:+, %xCOGClose]        {% ([{ tag, body }]) => ({ kind: "XMLElement", tag, content: body }) %}
                   | VoidElement[%xPOGOpen, Array[PairingOption, %lineBreak], %xPOGClose] {% ([{ tag, body }]) => ({ kind: "XMLElement", tag, content: body }) %}
 XMLAttribute   -> %spaces %identifiable:+ "=" "\"" Text:* "\""          {% ([ , key,,, value ]) => ({ kind: "XMLAttribute", key: mergeValue(key), value: value.join('') }) %}
 BlockMath      -> %blockMathOpen %any:+ %blockMathClose                 {% ([ , content ]) => ({ kind: "Math", inline: false, content: mergeValue(content) }) %}

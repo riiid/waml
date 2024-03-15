@@ -212,11 +212,8 @@ export namespace WAML {
         attributes: XMLAttribute[];
         content: Array<TableCell | MooToken<"rowSeparator">>;
       }
-    | {
-        kind: "XMLElement";
-        tag: "pog";
-        content: PairingOption[];
-      };
+    | { kind: "XMLElement"; tag: "pog"; content: PairingOption[] }
+    | { kind: "XMLElement"; tag: "cog"; content: Inline[] };
   export type TableCell = {
     kind: "Cell";
     prefix?: string;
