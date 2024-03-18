@@ -2,7 +2,7 @@ import { WAMLDocument } from "../dist/document.js";
 
 const content = `
 @answer {1}
-@answer abc{1}
+@answer abc{{1 -> 2}}
 `;
 const document = new WAMLDocument(content);
 

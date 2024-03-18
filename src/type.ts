@@ -102,6 +102,8 @@ export namespace WAML {
     | null;
   export type Inline =
     | InlineOption
+    | InlineKnob
+    | ButtonKnob
     | MooToken<"medium">
     | Math<true>
     | StyledInline
@@ -120,6 +122,8 @@ export namespace WAML {
     value: string;
     defaultValue: boolean;
   };
+  export type InlineKnob = { kind: "InlineKnob", index: number, inlines: Inline[] };
+  export type ButtonKnob = { kind: "ButtonKnob", index: number, inlines: Inline[] };
   export type StyledInline = {
     kind: "StyledInline";
     style: "underline" | "bold" | "italic" | "strikethrough";

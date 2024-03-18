@@ -28,8 +28,9 @@
     buttonBlank: { match: /{[\d,]*\[_{3,}\]}/, value: chunk => (chunk.match(/^{([\d,]*)\[/)[1] || "0").split(',').filter(v => v).map(v => parseInt(v)) },
     buttonOptionOpen: { match: /{[\d,]*\[/, value: chunk => chunk.match(/^{([\d,]*)\[/)[1] || "0", push: "singleButtonOption" },
     choiceOptionOpen: { match: /{/, push: "singleChoiceOption" },
-    pairingOptionGroupOpen: { match: /<pog>/ },
     xTableOpen: { match: /<table/, push: "xTableOpening", value: () => "table" },
+    inlineKnobOpen: { match: /\(\d*?\(/, push: "inlineKnob", value: chunk => chunk.match(/\((\d*?)\(/)[1] || "0" },
+    buttonKnobOpen: { match: /\(\d*?\[/, push: "buttonKnob", value: chunk => chunk.match(/\((\d*?)\[/)[1] || "0" },
 
     dKVDirective: { match: /@(?:passage|answertype)\b/, value: chunk => chunk.slice(1) },
     dAnswer: { match: "@answer", push: "answer" },
@@ -183,6 +184,16 @@
       unorderedOptionSeparator: /\s*,\s*/,
       ...textual
     },
+    inlineKnob: {
+      escaping,
+      inlineKnobClose: { match: /\)\)/, pop: 1 },
+      ...withoutXML
+    },
+    buttonKnob: {
+      escaping,
+      buttonKnobClose: { match: /\]\)/, pop: 1 },
+      ...withoutXML
+    },
     blockMath: {
       escaping,
       blockMathClose: { match: "$$", pop: 1 },
@@ -292,6 +303,8 @@ Inline         -> InlineOption                                          {% id %}
                   | StyledInline                                        {% id %}
                   | ClassedInline                                       {% id %}
                   | LineXMLElement                                      {% id %}
+                  | InlineKnob                                          {% id %}
+                  | ButtonKnob                                          {% id %}
 Text           -> %identifiable                                         {% ([ token ]) => token.value %}
                   | %title                                              {% ([ token ]) => token.value %}
                   | %caption                                            {% ([ token ]) => token.value %}
@@ -400,3 +413,5 @@ PairingNetItem -> %pairingNetItemOpen %spaces:? %identifiable:+ %pairingNetItemA
                                                                           from: from.join(''),
                                                                           to: to.join('')
                                                                         })%}
+InlineKnob     -> %inlineKnobOpen Inline:+ %inlineKnobClose             {% ([ { value }, inlines ]) => ({ kind: "InlineKnob", index: parseInt(value), inlines: trimArray(inlines) })%}
+ButtonKnob     -> %buttonKnobOpen Inline:+ %buttonKnobClose             {% ([ { value }, inlines ]) => ({ kind: "ButtonKnob", index: parseInt(value), inlines: trimArray(inlines) })%}
