@@ -189,6 +189,12 @@ export declare namespace WAML {
         content: Array<TableCell | MooToken<"rowSeparator">>;
     } | {
         kind: "XMLElement";
+        tag: "action";
+        index: number;
+        condition: MooToken<"actionCondition">;
+        actions: Action[];
+    } | {
+        kind: "XMLElement";
         tag: "pog";
         content: PairingOption[];
     } | {
@@ -196,6 +202,25 @@ export declare namespace WAML {
         tag: "cog";
         content: Inline[];
     };
+    export type Action = {
+        kind: "Action";
+    } & ({
+        command: "go";
+        value: "next" | "back" | number;
+    } | {
+        command: "play";
+        medium: MooTokenValueTable["medium"];
+    } | {
+        command: "replace";
+        value: string;
+    } | {
+        command: "set";
+        index?: number;
+        value: "enabled" | "disabled" | "activated" | "inactivated";
+    } | {
+        command: "dispatch";
+        value: string;
+    });
     export type TableCell = {
         kind: "Cell";
         prefix?: string;
@@ -227,6 +252,7 @@ export declare namespace WAML {
         hr: "---";
         rowSeparator: "===";
         buttonBlank: number[];
+        actionCondition: "onLoad" | "onClick";
     };
     type ObjectiveOption<T extends string> = {
         kind: T;

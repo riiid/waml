@@ -29,6 +29,7 @@
     buttonOptionOpen: { match: /{[\d,]*\[/, value: chunk => chunk.match(/^{([\d,]*)\[/)[1] || "0", push: "singleButtonOption" },
     choiceOptionOpen: { match: /{/, push: "singleChoiceOption" },
     xTableOpen: { match: /<table/, push: "xTableOpening", value: () => "table" },
+    xActionOpen: { match: /<action/, push: "xActionOpening", value: () => "action" },
     inlineKnobOpen: { match: /\(\d*?\(/, push: "inlineKnob", value: chunk => chunk.match(/\((\d*?)\(/)[1] || "0" },
     buttonKnobOpen: { match: /\(\d*?\[/, push: "buttonKnob", value: chunk => chunk.match(/\((\d*?)\[/)[1] || "0" },
 
@@ -104,13 +105,7 @@
       xCOGClose: { match: /\s*<\/cog>/, pop: 1 },
       ...omit(withoutXML, 'longLingualOption', 'shortLingualOptionOpen', 'buttonBlank', 'buttonOptionOpen')
     },
-    xTableOpening: {
-      escaping,
-      tagClose: { match: />/, next: "xTable" },
-      spaces: withoutXML.spaces,
-      identifiable: withoutXML.identifiable,
-      character: withoutXML.character
-    },
+    xTableOpening: xmlOpening("xTable"),
     xTable: {
       escaping,
       xTableClose: { match: /\s*<\/table>/, pop: 1 },
@@ -134,6 +129,39 @@
         };
       }},
       ...omit(main, 'classClose')
+    },
+    xActionOpening: xmlOpening("xAction"),
+    xAction: {
+      escaping,
+      xActionClose: { match: /\s*<\/action>/, pop: 1 },
+      actionCondition: [ "onLoad", "onClick" ],
+      aPlay: "play ",
+      aReplace: { match: /replace /, push: "aReplace" },
+      action: [
+        { match: /go next/, value: () => ({ command: "go", value: "next" }) },
+        { match: /go back/, value: () => ({ command: "go", value: "back" }) },
+        { match: /go \d+/, value: chunk => ({ command: "go", value: parseInt(chunk.match(/\d+/)[0]) }) },
+        {
+          match: [ /set (?:\d+ )?(?:enabled|disabled|activated|inactivated)/ ],
+          value: function(chunk){
+            const [ , index, value ] = chunk.match(addGroups(this.match[0]));
+            
+            if(index){
+              return { command: "set", index: parseInt(index), value };
+            }
+            return { command: "set", value };
+          }
+        },
+        { match: /dispatch \w+/, value: chunk => ({ command: "dispatch", value: chunk.slice(9) }) }
+      ],
+      allSpaces: { match: /[ \t\r\n]+/, lineBreaks: true },
+      medium: withoutXML.medium,
+      ...textual
+    },
+    aReplace: {
+      escaping,
+      comma: { match: /,/, pop: 1 },
+      ...textual
     },
     answer: {
       escaping,
@@ -251,6 +279,18 @@
     for(const k of keys) delete R[k];
     return R;
   }
+  function addGroups(pattern){
+    return new RegExp(pattern.source.replaceAll("(?:", "("), pattern.flags);
+  }
+  function xmlOpening(next){
+    return {
+      escaping,
+      tagClose: { match: />/, next },
+      spaces: withoutXML.spaces,
+      identifiable: withoutXML.identifiable,
+      character: withoutXML.character
+    };
+  }
 %}
 @lexer lexer
 
@@ -319,7 +359,15 @@ ClassedBlock   -> %classOpen %identifiable:+ %classClose                {% ([ , 
 ClassedInline  -> %classOpen %identifiable:+ ":" Inline:* %classClose   {% ([ , name,, inlines ]) => ({ kind: "ClassedInline", name: mergeValue(name), inlines: trimArray(inlines) }) %}
 
 XMLElement     -> VoidElement[%xStyleOpen, %any:*, %xStyleClose]        {% ([{ tag, body }]) => ({ kind: "XMLElement", tag, content: mergeValue(body) }) %}
-                  | VoidElement[%xExplanationOpen, Main, %xExplanationClose] {% ([{ tag, body }]) => ({ kind: "XMLElement", tag, content: body }) %} 
+                  | VoidElement[%xExplanationOpen, Main, %xExplanationClose] {% ([{ tag, body }]) => ({ kind: "XMLElement", tag, content: body }) %}
+                  | Element[%xActionOpen, ActionDefinition, %xActionClose] {% ([{ tag, attributes, body }]) => {
+                                                                          let index = 0;
+                                                                          for(const { key, value } of attributes){
+                                                                            if(key !== "for") throw Error(`Unexpected attribute of <action>: ${key}`);
+                                                                            index = parseInt(value) || 0;
+                                                                          }
+                                                                          return { kind: "XMLElement", tag, index, condition: body.condition, actions: body.actions };
+                                                                        }%}
 LineXMLElement -> Element[%xTableOpen, Table, %xTableClose]             {% ([{ tag, attributes, body }]) => ({ kind: "XMLElement", tag, attributes, content: body }) %}
                   | VoidElement[%xCOGOpen, Inline:+, %xCOGClose]        {% ([{ tag, body }]) => ({ kind: "XMLElement", tag, content: body }) %}
                   | VoidElement[%xPOGOpen, Array[PairingOption, %lineBreak], %xPOGClose] {% ([{ tag, body }]) => ({ kind: "XMLElement", tag, content: body }) %}
@@ -415,3 +463,11 @@ PairingNetItem -> %pairingNetItemOpen %spaces:? %identifiable:+ %pairingNetItemA
                                                                         })%}
 InlineKnob     -> %inlineKnobOpen Inline:+ %inlineKnobClose             {% ([ { value }, inlines ]) => ({ kind: "InlineKnob", index: parseInt(value), inlines: trimArray(inlines) })%}
 ButtonKnob     -> %buttonKnobOpen Inline:+ %buttonKnobClose             {% ([ { value }, inlines ]) => ({ kind: "ButtonKnob", index: parseInt(value), inlines: trimArray(inlines) })%}
+ActionDefinition -> %allSpaces:? %actionCondition %allSpaces:? "{" %allSpaces:? Array[Action, %allSpaces:? "," %allSpaces:?] %allSpaces:? "}" %allSpaces:? {% ([ , condition,,,, actions ]) => ({
+                                                                          kind: "ActionDefinition",
+                                                                          condition,
+                                                                          actions
+                                                                        })%}
+Action         -> %aPlay %medium                                        {% ([ , medium ]) => ({ kind: "Action", command: "play", medium: medium.value }) %}
+                  | %aReplace Text:+                                    {% ([ , value ]) => ({ kind: "Action", command: "replace", value: value.join('') }) %}
+                  | %action                                             {% ([ { value } ]) => ({ kind: "Action", ...value }) %}

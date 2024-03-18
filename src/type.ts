@@ -122,8 +122,16 @@ export namespace WAML {
     value: string;
     defaultValue: boolean;
   };
-  export type InlineKnob = { kind: "InlineKnob", index: number, inlines: Inline[] };
-  export type ButtonKnob = { kind: "ButtonKnob", index: number, inlines: Inline[] };
+  export type InlineKnob = {
+    kind: "InlineKnob";
+    index: number;
+    inlines: Inline[];
+  };
+  export type ButtonKnob = {
+    kind: "ButtonKnob";
+    index: number;
+    inlines: Inline[];
+  };
   export type StyledInline = {
     kind: "StyledInline";
     style: "underline" | "bold" | "italic" | "strikethrough";
@@ -216,8 +224,40 @@ export namespace WAML {
         attributes: XMLAttribute[];
         content: Array<TableCell | MooToken<"rowSeparator">>;
       }
+    | {
+        kind: "XMLElement";
+        tag: "action";
+        index: number;
+        condition: MooToken<"actionCondition">;
+        actions: Action[];
+      }
     | { kind: "XMLElement"; tag: "pog"; content: PairingOption[] }
     | { kind: "XMLElement"; tag: "cog"; content: Inline[] };
+  export type Action = {
+    kind: "Action";
+  } & (
+    | {
+        command: "go";
+        value: "next" | "back" | number;
+      }
+    | {
+        command: "play";
+        medium: MooTokenValueTable["medium"];
+      }
+    | {
+        command: "replace";
+        value: string;
+      }
+    | {
+        command: "set";
+        index?: number;
+        value: "enabled" | "disabled" | "activated" | "inactivated";
+      }
+    | {
+        command: "dispatch";
+        value: string;
+      }
+  );
   export type TableCell = {
     kind: "Cell";
     prefix?: string;
@@ -251,6 +291,7 @@ export namespace WAML {
     hr: "---";
     rowSeparator: "===";
     buttonBlank: number[];
+    actionCondition: "onLoad" | "onClick";
   };
 
   type ObjectiveOption<T extends string> = {
