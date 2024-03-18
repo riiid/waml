@@ -62,6 +62,7 @@ export function getAnswerFormat(
   const flattenAnswers = answer ? getFlattenAnswers(answer) : [];
   const choiceOptionValues = getChoiceOptionValues(document);
   const interactions: WAML.Interaction[] = [];
+  let cogIndex = 0;
 
   const existingChoiceOptionGroup: Record<
     string,
@@ -115,6 +116,15 @@ export function getAnswerFormat(
             if (!hasKind(w, "Cell")) continue;
             iterateDocument(w.body);
           }
+        } else if (v.tag === "cog") {
+          const myIndex = cogIndex++;
+
+          for (const w of iterate(v.content)) {
+            if (typeof w !== "string" && hasKind(w, "ChoiceOption")) {
+              w.group = myIndex;
+            }
+            yield w;
+          }
         }
         continue;
       }
@@ -164,7 +174,7 @@ export function getAnswerFormat(
     ) {
       for (const v of inline.inlines) checkInline(v);
     } else if (hasKind(inline, "ChoiceOption")) {
-      handleChoiceOption(inline.value);
+      handleChoiceOption(inline.value, inline.group);
     } else if (hasKind(inline, "ButtonOption")) {
       handleButtonOption(inline.value, inline.group);
     } else if (hasKind(inline, "ShortLingualOption")) {
@@ -175,30 +185,32 @@ export function getAnswerFormat(
       });
     }
   }
-  function handleChoiceOption(value: string): void {
-    let group: ReturnType<typeof guessChoiceOptionGroup>;
+  function handleChoiceOption(value: string, group?: number): void {
+    let actualGroup: ReturnType<typeof guessChoiceOptionGroup>;
 
-    if (
+    if (group !== undefined) {
+      actualGroup = group;
+    } else if (
       ambiguousLowerRomanValues.includes(value) &&
       choiceOptionValues.includes("ii")
     ) {
-      group = WAML.ChoiceOptionGroup.LOWER_ROMAN;
+      actualGroup = WAML.ChoiceOptionGroup.LOWER_ROMAN;
     } else if (
       ambiguousUpperRomanValues.includes(value) &&
       choiceOptionValues.includes("II")
     ) {
-      group = WAML.ChoiceOptionGroup.UPPER_ROMAN;
+      actualGroup = WAML.ChoiceOptionGroup.UPPER_ROMAN;
     } else {
-      group = guessChoiceOptionGroup(value);
+      actualGroup = guessChoiceOptionGroup(value);
     }
-    if (existingChoiceOptionGroup[group]) {
-      existingChoiceOptionGroup[group].values.push(value);
+    if (existingChoiceOptionGroup[actualGroup]) {
+      existingChoiceOptionGroup[actualGroup].values.push(value);
     } else {
       interactions.push(
-        (existingChoiceOptionGroup[group] = {
+        (existingChoiceOptionGroup[actualGroup] = {
           index: interactions.length,
           type: WAML.InteractionType.CHOICE_OPTION,
-          group,
+          group: actualGroup,
           values: [value],
           multipleness: getMultipleness(interactions.length),
         })

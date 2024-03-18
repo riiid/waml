@@ -6,8 +6,9 @@ export namespace WAML {
     LONG_LINGUAL_OPTION,
     PAIRING_NET,
   }
+  // 0부터는 <cog>에 의해 자동 설정된 값들이 들어갑니다.
   export enum ChoiceOptionGroup {
-    NUMERIC,
+    NUMERIC = -7,
     LOWER_ALPHABETIC,
     UPPER_ALPHABETIC,
     HANGEUL_CONSONANTAL,
@@ -112,7 +113,9 @@ export namespace WAML {
     | string;
   export type Options = Array<AnswerFormOf<InlineOption> | PairingNet>;
   export type InlineOption = ChoiceOption | ButtonOption | ShortLingualOption;
-  export type ChoiceOption = ObjectiveOption<"ChoiceOption">;
+  export type ChoiceOption = ObjectiveOption<"ChoiceOption"> & {
+    group: number;
+  };
   export type ButtonOption = ObjectiveOption<"ButtonOption"> & {
     id: number; // NOTE 같은 보기가 여럿 있을 수도 있기 때문
     group: number[];

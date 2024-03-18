@@ -1,9 +1,8 @@
 import { WAMLDocument } from "../dist/document.js";
 
 const content = `
-@answer {1}
-@answer abc{{1 -> 2}}
+He <cog>{was} / {were}</cog> tried because he <cog>{had run} / {ran}</cog> so fast.
 `;
 const document = new WAMLDocument(content);
 
-console.log(JSON.stringify(document.raw));
+console.log(JSON.stringify(document.metadata));

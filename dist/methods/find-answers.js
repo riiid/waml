@@ -52,6 +52,7 @@ export function getAnswerFormat(document, answer) {
     const flattenAnswers = answer ? getFlattenAnswers(answer) : [];
     const choiceOptionValues = getChoiceOptionValues(document);
     const interactions = [];
+    let cogIndex = 0;
     const existingChoiceOptionGroup = {};
     const existingPairingNetGroup = {};
     const buttonOptionValues = {};
@@ -98,6 +99,15 @@ export function getAnswerFormat(document, answer) {
                         if (!hasKind(w, "Cell"))
                             continue;
                         iterateDocument(w.body);
+                    }
+                }
+                else if (v.tag === "cog") {
+                    const myIndex = cogIndex++;
+                    for (const w of iterate(v.content)) {
+                        if (typeof w !== "string" && hasKind(w, "ChoiceOption")) {
+                            w.group = myIndex;
+                        }
+                        yield w;
                     }
                 }
                 continue;
@@ -150,7 +160,7 @@ export function getAnswerFormat(document, answer) {
                 checkInline(v);
         }
         else if (hasKind(inline, "ChoiceOption")) {
-            handleChoiceOption(inline.value);
+            handleChoiceOption(inline.value, inline.group);
         }
         else if (hasKind(inline, "ButtonOption")) {
             handleButtonOption(inline.value, inline.group);
@@ -163,27 +173,30 @@ export function getAnswerFormat(document, answer) {
             });
         }
     }
-    function handleChoiceOption(value) {
-        let group;
-        if (ambiguousLowerRomanValues.includes(value) &&
+    function handleChoiceOption(value, group) {
+        let actualGroup;
+        if (group !== undefined) {
+            actualGroup = group;
+        }
+        else if (ambiguousLowerRomanValues.includes(value) &&
             choiceOptionValues.includes("ii")) {
-            group = WAML.ChoiceOptionGroup.LOWER_ROMAN;
+            actualGroup = WAML.ChoiceOptionGroup.LOWER_ROMAN;
         }
         else if (ambiguousUpperRomanValues.includes(value) &&
             choiceOptionValues.includes("II")) {
-            group = WAML.ChoiceOptionGroup.UPPER_ROMAN;
+            actualGroup = WAML.ChoiceOptionGroup.UPPER_ROMAN;
         }
         else {
-            group = guessChoiceOptionGroup(value);
+            actualGroup = guessChoiceOptionGroup(value);
         }
-        if (existingChoiceOptionGroup[group]) {
-            existingChoiceOptionGroup[group].values.push(value);
+        if (existingChoiceOptionGroup[actualGroup]) {
+            existingChoiceOptionGroup[actualGroup].values.push(value);
         }
         else {
-            interactions.push((existingChoiceOptionGroup[group] = {
+            interactions.push((existingChoiceOptionGroup[actualGroup] = {
                 index: interactions.length,
                 type: WAML.InteractionType.CHOICE_OPTION,
-                group,
+                group: actualGroup,
                 values: [value],
                 multipleness: getMultipleness(interactions.length),
             }));

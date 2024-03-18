@@ -7,13 +7,13 @@ export declare namespace WAML {
         PAIRING_NET = 4
     }
     export enum ChoiceOptionGroup {
-        NUMERIC = 0,
-        LOWER_ALPHABETIC = 1,
-        UPPER_ALPHABETIC = 2,
-        HANGEUL_CONSONANTAL = 3,
-        HANGEUL_FULL = 4,
-        LOWER_ROMAN = 5,
-        UPPER_ROMAN = 6
+        NUMERIC = -7,
+        LOWER_ALPHABETIC = -6,
+        UPPER_ALPHABETIC = -5,
+        HANGEUL_CONSONANTAL = -4,
+        HANGEUL_FULL = -3,
+        LOWER_ROMAN = -2,
+        UPPER_ROMAN = -1
     }
     export type Document = Array<Line | XMLElement | MooToken<"lineComment">>;
     export type ParserError = {
@@ -82,7 +82,9 @@ export declare namespace WAML {
     export type Inline = InlineOption | InlineKnob | ButtonKnob | MooToken<"medium"> | Math<true> | StyledInline | ClassedInline | LineXMLElement | string;
     export type Options = Array<AnswerFormOf<InlineOption> | PairingNet>;
     export type InlineOption = ChoiceOption | ButtonOption | ShortLingualOption;
-    export type ChoiceOption = ObjectiveOption<"ChoiceOption">;
+    export type ChoiceOption = ObjectiveOption<"ChoiceOption"> & {
+        group: number;
+    };
     export type ButtonOption = ObjectiveOption<"ButtonOption"> & {
         id: number;
         group: number[];
