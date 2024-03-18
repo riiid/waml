@@ -178,6 +178,12 @@ export declare namespace WAML {
         kind: "XMLElement";
         tag: "explanation";
         content: Document;
+    } | {
+        kind: "XMLElement";
+        tag: "action";
+        index: number;
+        condition: MooToken<"actionCondition">;
+        actions: Action[];
     };
     export type XMLAttribute = {
         kind: "XMLAttribute";
@@ -189,12 +195,6 @@ export declare namespace WAML {
         tag: "table";
         attributes: XMLAttribute[];
         content: Array<TableCell | MooToken<"rowSeparator">>;
-    } | {
-        kind: "XMLElement";
-        tag: "action";
-        index: number;
-        condition: MooToken<"actionCondition">;
-        actions: Action[];
     } | {
         kind: "XMLElement";
         tag: "pog";
@@ -230,6 +230,9 @@ export declare namespace WAML {
         colspan?: number;
         alignment?: "left" | "center" | "right";
         body: Document;
+    };
+    export type TypedXMLElement<T extends string> = (XMLElement | LineXMLElement) & {
+        tag: T;
     };
     export type MooTokenType = keyof MooTokenValueTable;
     export type MooToken<T extends MooTokenType> = {

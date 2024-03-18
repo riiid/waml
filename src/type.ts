@@ -214,6 +214,13 @@ export namespace WAML {
         kind: "XMLElement";
         tag: "explanation";
         content: Document;
+      }
+    | {
+        kind: "XMLElement";
+        tag: "action";
+        index: number;
+        condition: MooToken<"actionCondition">;
+        actions: Action[];
       };
   export type XMLAttribute = {
     kind: "XMLAttribute";
@@ -226,13 +233,6 @@ export namespace WAML {
         tag: "table";
         attributes: XMLAttribute[];
         content: Array<TableCell | MooToken<"rowSeparator">>;
-      }
-    | {
-        kind: "XMLElement";
-        tag: "action";
-        index: number;
-        condition: MooToken<"actionCondition">;
-        actions: Action[];
       }
     | { kind: "XMLElement"; tag: "pog"; content: PairingOption[] }
     | { kind: "XMLElement"; tag: "cog"; content: Inline[] };
@@ -270,6 +270,10 @@ export namespace WAML {
     body: Document;
   };
 
+  export type TypedXMLElement<T extends string> = (
+    | XMLElement
+    | LineXMLElement
+  ) & { tag: T };
   // eslint-disable-next-line @jjoriping/no-type-name-affix
   export type MooTokenType = keyof MooTokenValueTable;
   export type MooToken<T extends MooTokenType> = {
