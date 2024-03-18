@@ -165,6 +165,7 @@ function id(x) { return x[0]; }
     aReplace: {
       escaping,
       comma: { match: /,/, pop: 1 },
+      lineBreak: { ...withoutXML.lineBreak, pop: 1 },
       ...textual
     },
     answer: {
@@ -227,12 +228,10 @@ function id(x) { return x[0]; }
       ...withoutXML
     },
     blockMath: {
-      escaping,
       blockMathClose: { match: "$$", pop: 1 },
       any: { match: /[\s\S]/, lineBreaks: true }
     },
     inlineMath: {
-      escaping,
       inlineMathClose: { match: /\$/, pop: 1 },
       any: { match: /[\s\S]/, lineBreaks: true }
     },
@@ -650,7 +649,9 @@ var grammar = {
     {"name": "Action", "symbols": [(lexer.has("aPlay") ? {type: "aPlay"} : aPlay), (lexer.has("medium") ? {type: "medium"} : medium)], "postprocess": ([ , medium ]) => ({ kind: "Action", command: "play", medium: medium.value })},
     {"name": "Action$ebnf$1", "symbols": ["Text"]},
     {"name": "Action$ebnf$1", "symbols": ["Action$ebnf$1", "Text"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "Action", "symbols": [(lexer.has("aReplace") ? {type: "aReplace"} : aReplace), "Action$ebnf$1"], "postprocess": ([ , value ]) => ({ kind: "Action", command: "replace", value: value.join('') })},
+    {"name": "Action$ebnf$2", "symbols": [(lexer.has("lineBreak") ? {type: "lineBreak"} : lineBreak)], "postprocess": id},
+    {"name": "Action$ebnf$2", "symbols": [], "postprocess": function(d) {return null;}},
+    {"name": "Action", "symbols": [(lexer.has("aReplace") ? {type: "aReplace"} : aReplace), "Action$ebnf$1", "Action$ebnf$2"], "postprocess": ([ , value ]) => ({ kind: "Action", command: "replace", value: value.join('') })},
     {"name": "Action", "symbols": [(lexer.has("action") ? {type: "action"} : action)], "postprocess": ([ { value } ]) => ({ kind: "Action", ...value })}
 ]
   , ParserStart: "Main"

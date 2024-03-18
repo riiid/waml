@@ -161,6 +161,7 @@
     aReplace: {
       escaping,
       comma: { match: /,/, pop: 1 },
+      lineBreak: { ...withoutXML.lineBreak, pop: 1 },
       ...textual
     },
     answer: {
@@ -223,12 +224,10 @@
       ...withoutXML
     },
     blockMath: {
-      escaping,
       blockMathClose: { match: "$$", pop: 1 },
       any: { match: /[\s\S]/, lineBreaks: true }
     },
     inlineMath: {
-      escaping,
       inlineMathClose: { match: /\$/, pop: 1 },
       any: { match: /[\s\S]/, lineBreaks: true }
     },
@@ -469,5 +468,5 @@ ActionDefinition -> %allSpaces:? %actionCondition %allSpaces:? "{" %allSpaces:? 
                                                                           actions
                                                                         })%}
 Action         -> %aPlay %medium                                        {% ([ , medium ]) => ({ kind: "Action", command: "play", medium: medium.value }) %}
-                  | %aReplace Text:+                                    {% ([ , value ]) => ({ kind: "Action", command: "replace", value: value.join('') }) %}
+                  | %aReplace Text:+ %lineBreak:?                       {% ([ , value ]) => ({ kind: "Action", command: "replace", value: value.join('') }) %}
                   | %action                                             {% ([ { value } ]) => ({ kind: "Action", ...value }) %}
