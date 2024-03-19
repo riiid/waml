@@ -411,7 +411,9 @@ var grammar = {
     {"name": "XMLElement$macrocall$5", "symbols": ["XMLElement$macrocall$6", "XMLElement$macrocall$7", "XMLElement$macrocall$8"], "postprocess": ([ open, body ]) => ({ tag: open[0].value, body: body[0] })},
     {"name": "XMLElement", "symbols": ["XMLElement$macrocall$5"], "postprocess": ([{ tag, body }]) => ({ kind: "XMLElement", tag, content: body })},
     {"name": "XMLElement$macrocall$10", "symbols": [(lexer.has("xActionOpen") ? {type: "xActionOpen"} : xActionOpen)]},
-    {"name": "XMLElement$macrocall$11", "symbols": ["ActionDefinition"]},
+    {"name": "XMLElement$macrocall$11$ebnf$1", "symbols": ["ActionDefinition"]},
+    {"name": "XMLElement$macrocall$11$ebnf$1", "symbols": ["XMLElement$macrocall$11$ebnf$1", "ActionDefinition"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "XMLElement$macrocall$11", "symbols": ["XMLElement$macrocall$11$ebnf$1"]},
     {"name": "XMLElement$macrocall$12", "symbols": [(lexer.has("xActionClose") ? {type: "xActionClose"} : xActionClose)]},
     {"name": "XMLElement$macrocall$9$ebnf$1", "symbols": []},
     {"name": "XMLElement$macrocall$9$ebnf$1", "symbols": ["XMLElement$macrocall$9$ebnf$1", "XMLAttribute"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
@@ -428,7 +430,7 @@ var grammar = {
             if(key !== "for") throw Error(`Unexpected attribute of <action>: ${key}`);
             index = parseInt(value) || 0;
           }
-          return { kind: "XMLElement", tag, index, condition: body.condition, actions: body.actions };
+          return { kind: "XMLElement", tag, index, content: body };
         }},
     {"name": "LineXMLElement$macrocall$2", "symbols": [(lexer.has("xTableOpen") ? {type: "xTableOpen"} : xTableOpen)]},
     {"name": "LineXMLElement$macrocall$3", "symbols": ["Table"]},

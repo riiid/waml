@@ -359,13 +359,13 @@ ClassedInline  -> %classOpen %identifiable:+ ":" Inline:* %classClose   {% ([ , 
 
 XMLElement     -> VoidElement[%xStyleOpen, %any:*, %xStyleClose]        {% ([{ tag, body }]) => ({ kind: "XMLElement", tag, content: mergeValue(body) }) %}
                   | VoidElement[%xExplanationOpen, Main, %xExplanationClose] {% ([{ tag, body }]) => ({ kind: "XMLElement", tag, content: body }) %}
-                  | Element[%xActionOpen, ActionDefinition, %xActionClose] {% ([{ tag, attributes, body }]) => {
+                  | Element[%xActionOpen, ActionDefinition:+, %xActionClose] {% ([{ tag, attributes, body }]) => {
                                                                           let index = 0;
                                                                           for(const { key, value } of attributes){
                                                                             if(key !== "for") throw Error(`Unexpected attribute of <action>: ${key}`);
                                                                             index = parseInt(value) || 0;
                                                                           }
-                                                                          return { kind: "XMLElement", tag, index, condition: body.condition, actions: body.actions };
+                                                                          return { kind: "XMLElement", tag, index, content: body };
                                                                         }%}
 LineXMLElement -> Element[%xTableOpen, Table, %xTableClose]             {% ([{ tag, attributes, body }]) => ({ kind: "XMLElement", tag, attributes, content: body }) %}
                   | VoidElement[%xCOGOpen, Inline:+, %xCOGClose]        {% ([{ tag, body }]) => ({ kind: "XMLElement", tag, content: body }) %}

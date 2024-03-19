@@ -182,13 +182,16 @@ export declare namespace WAML {
         kind: "XMLElement";
         tag: "action";
         index: number;
-        condition: MooToken<"actionCondition">;
-        actions: Action[];
+        content: ActionDefinition[];
     };
     export type XMLAttribute = {
         kind: "XMLAttribute";
         key: string;
         value: string;
+    };
+    export type ActionDefinition = {
+        condition: MooToken<"actionCondition">;
+        actions: Action[];
     };
     export type LineXMLElement = {
         kind: "XMLElement";
