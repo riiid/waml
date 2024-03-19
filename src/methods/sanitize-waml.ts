@@ -76,6 +76,10 @@ export function sanitize(
         if (v.value.alt) line.push(`[${v.value.alt}]\n`);
         continue;
       }
+      if (isMooToken(v, "forcedLineBreak")) {
+        line.push("\n");
+        continue;
+      }
       switch (v.kind) {
         case "ChoiceOption":
         case "ButtonOption":

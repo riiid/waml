@@ -60,6 +60,10 @@ export function sanitize(document, { showOptionLabels = false }) {
                     line.push(`[${v.value.alt}]\n`);
                 continue;
             }
+            if (isMooToken(v, "forcedLineBreak")) {
+                line.push("\n");
+                continue;
+            }
             switch (v.kind) {
                 case "ChoiceOption":
                 case "ButtonOption":

@@ -106,6 +106,7 @@ export namespace WAML {
     | InlineKnob
     | ButtonKnob
     | MooToken<"medium">
+    | MooToken<"forcedLineBreak">
     | Math<true>
     | StyledInline
     | ClassedInline
@@ -298,6 +299,7 @@ export namespace WAML {
       alt?: string;
       json: object;
     };
+    forcedLineBreak: string;
     hr: "---";
     rowSeparator: "===";
     buttonBlank: number[];

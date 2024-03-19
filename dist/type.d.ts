@@ -79,7 +79,7 @@ export declare namespace WAML {
         headOption?: ChoiceOption;
         inlines: Inline[];
     } | ShortLingualOption | null;
-    export type Inline = InlineOption | InlineKnob | ButtonKnob | MooToken<"medium"> | Math<true> | StyledInline | ClassedInline | LineXMLElement | string;
+    export type Inline = InlineOption | InlineKnob | ButtonKnob | MooToken<"medium"> | MooToken<"forcedLineBreak"> | Math<true> | StyledInline | ClassedInline | LineXMLElement | string;
     export type Options = Array<AnswerFormOf<InlineOption> | PairingNet>;
     export type InlineOption = ChoiceOption | ButtonOption | ShortLingualOption;
     export type ChoiceOption = ObjectiveOption<"ChoiceOption"> & {
@@ -257,6 +257,7 @@ export declare namespace WAML {
             alt?: string;
             json: object;
         };
+        forcedLineBreak: string;
         hr: "---";
         rowSeparator: "===";
         buttonBlank: number[];

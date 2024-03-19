@@ -17,6 +17,7 @@
     character: /./
   };
   const withoutXML = {
+    forcedLineBreak: "///",
     lineComment: /^\/\/[^\n]+/,
     classOpen: "[[", classClose: "]]",
     blockMathOpen: { match: "$$", push: "blockMath" },
@@ -337,6 +338,7 @@ Inline         -> InlineOption                                          {% id %}
                   | %buttonBlank                                        {% id %}
                   | %medium                                             {% id %}
                   | %spaces                                             {% ([ token ]) => token.value %}
+                  | %forcedLineBreak                                    {% id %}
                   | InlineMath                                          {% id %}
                   | Text                                                {% id %}
                   | StyledInline                                        {% id %}

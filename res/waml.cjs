@@ -21,6 +21,7 @@ function id(x) { return x[0]; }
     character: /./
   };
   const withoutXML = {
+    forcedLineBreak: "///",
     lineComment: /^\/\/[^\n]+/,
     classOpen: "[[", classClose: "]]",
     blockMathOpen: { match: "$$", push: "blockMath" },
@@ -365,6 +366,7 @@ var grammar = {
     {"name": "Inline", "symbols": [(lexer.has("buttonBlank") ? {type: "buttonBlank"} : buttonBlank)], "postprocess": id},
     {"name": "Inline", "symbols": [(lexer.has("medium") ? {type: "medium"} : medium)], "postprocess": id},
     {"name": "Inline", "symbols": [(lexer.has("spaces") ? {type: "spaces"} : spaces)], "postprocess": ([ token ]) => token.value},
+    {"name": "Inline", "symbols": [(lexer.has("forcedLineBreak") ? {type: "forcedLineBreak"} : forcedLineBreak)], "postprocess": id},
     {"name": "Inline", "symbols": ["InlineMath"], "postprocess": id},
     {"name": "Inline", "symbols": ["Text"], "postprocess": id},
     {"name": "Inline", "symbols": ["StyledInline"], "postprocess": id},
